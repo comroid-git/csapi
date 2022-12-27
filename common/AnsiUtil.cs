@@ -67,15 +67,21 @@ namespace comroid.csapi.common
         public static extern uint GetLastError();
 
         public static string ByteColor(byte b) => $"\u001b[38;5;${b}m";
+        public static string CursorPos(int row, int col) => $"\u001b[{row};{col}H";
 
-        public static void Init()
+        public static bool Enabled => GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), out uint mode) &&
+                                     (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+
+        public static bool Init()
         {
+            if (Enabled)
+                return false;
             var iStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
             if (!GetConsoleMode(iStdOut, out uint outConsoleMode))
             {
                 Console.WriteLine("Failed to get output console mode");
                 Console.ReadKey();
-                return;
+                return false;
             }
 
             outConsoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
@@ -83,8 +89,10 @@ namespace comroid.csapi.common
             {
                 Console.WriteLine($"Failed to set output console mode, error code: {GetLastError()}");
                 Console.ReadKey();
-                return;
+                return false;
             }
+
+            return Enabled;
         }
     }
 }
