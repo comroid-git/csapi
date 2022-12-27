@@ -36,14 +36,16 @@ namespace comroid.csapi.common
     [SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeEvident")]
     public class TextTable
     {
-        public readonly List<Column> Columns = new List<Column>();
-        public readonly List<Row> Rows = new List<Row>();
+        public virtual List<Column> Columns { get; }
+        public virtual List<Row> Rows { get; }
         private readonly bool _header;
         private readonly LineMode? _lineMode;
         private const int margin = 1;
 
         public TextTable(bool header = true, LineMode? lineMode = null)
         {
+            Rows = new List<Row>();
+            Columns = new List<Column>();
             _header = header;
             _lineMode = lineMode;
         }
@@ -64,7 +66,8 @@ namespace comroid.csapi.common
             return row;
         }
 
-        public void AddSeparator() => Rows.Add(new SeparatorRow());
+        public void AddSeparator(LineType? detail = null) =>
+            Rows.Add(new SeparatorRow() { Detail = detail ?? LineType.None });
 
         public override string ToString()
         {
@@ -116,13 +119,14 @@ namespace comroid.csapi.common
                         _header ? LineType.IdxVertical : LineType.ConD,
                         _header ? LineType.Bold : LineType.None));
             int rc = 0;
-            for (var ri = 0; ri < Rows.Count; ri++)
+            var rows = Rows;
+            for (var ri = 0; ri < rows.Count; ri++)
             {
-                var row = Rows[ri];
+                var row = rows[ri];
                 if (lines && row.Separator)
                 {
-                    if (rc > 0 && ri < Rows.Count) 
-                        sb.Append(HoriDetailLine(totalW, colTrims, LineType.IdxVertical));
+                    if (rc > 0 && ri < rows.Count) 
+                        sb.Append(HoriDetailLine(totalW, colTrims, LineType.IdxVertical, row.Detail));
                     continue;
                 }
                 var dir = LineType.ConR;
@@ -152,6 +156,7 @@ namespace comroid.csapi.common
         public class Row
         {
             internal readonly Dictionary<Column, object> _data = new Dictionary<Column, object>();
+            public virtual LineType Detail { get; set; }
 
             protected internal virtual bool Separator => false;
 
@@ -162,8 +167,9 @@ namespace comroid.csapi.common
             }
         }
 
-        private class SeparatorRow : Row
+        protected class SeparatorRow : Row
         {
+            public override LineType Detail { get; set; }
             protected internal override bool Separator => true;
         }
 
@@ -283,7 +289,7 @@ namespace comroid.csapi.common
         };
 
         [Flags]
-        private enum LineType : int
+        public enum LineType : int
         {
             None = 0b0_0000,
             Bold = 0b1_0000,
