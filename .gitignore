@@ -681,3 +681,4 @@ fabric.properties
 
 .idea/
 clmath/Antlr/
+common/common.csproj.DotSettings
