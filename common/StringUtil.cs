@@ -115,12 +115,14 @@ namespace comroid.csapi.common
                 sb.Append(HoriDetailLine(totalW, colTrims,
                         _header ? LineType.IdxVertical : LineType.ConD,
                         _header ? LineType.Bold : LineType.None));
+            int rc = 0;
             for (var ri = 0; ri < Rows.Count; ri++)
             {
                 var row = Rows[ri];
                 if (lines && row.Separator)
                 {
-                    sb.Append(HoriDetailLine(totalW, colTrims, LineType.IdxVertical));
+                    if (rc > 0 && ri < Rows.Count) 
+                        sb.Append(HoriDetailLine(totalW, colTrims, LineType.IdxVertical));
                     continue;
                 }
                 var dir = LineType.ConR;
@@ -138,7 +140,7 @@ namespace comroid.csapi.common
                 }
                 if (lines)
                     sb.Append(VertIndent(LineType.ConL));
-
+                rc += 1;
                 sb.AppendLine();
             }
 
