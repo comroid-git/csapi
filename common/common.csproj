@@ -5,12 +5,12 @@
         <Nullable>enable</Nullable>
         <AssemblyName>comroid.csapi.common</AssemblyName>
         <RootNamespace>comroid.csapi.common</RootNamespace>
-        <TargetFrameworks>net6.0;net7.0;netstandard2.1</TargetFrameworks>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Version>0.1.0</Version>
         <Title>Common C# Utilities</Title>
         <Authors>comroid</Authors>
         <AssemblyVersion>0.1.0</AssemblyVersion>
+        <TargetFramework>net6.0</TargetFramework>
     </PropertyGroup>
 
     <ItemGroup>
