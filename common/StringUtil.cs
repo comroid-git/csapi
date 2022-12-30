@@ -36,23 +36,22 @@ namespace comroid.csapi.common
     [SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeEvident")]
     public class TextTable
     {
-        public virtual List<Column> Columns { get; }
+        public List<Column> Columns { get; }
         public virtual List<Row> Rows { get; }
-        private readonly bool _header;
-        private readonly LineMode? _lineMode;
+        public string? Title { get; set; }
+        public bool Header { get; set; } = true;
+        public LineMode? Lines { get; set; }
         private const int margin = 1;
 
-        public TextTable(bool header = true, LineMode? lineMode = null)
+        public TextTable()
         {
             Rows = new List<Row>();
             Columns = new List<Column>();
-            _header = header;
-            _lineMode = lineMode;
         }
 
         public Column AddColumn(string name, bool justifyRight = false)
         {
-            var col = new Column(name, justifyRight);
+            var col = new Column(justifyRight) { Name = name };
             Columns.Add(col);
             return col;
         }
@@ -77,7 +76,7 @@ namespace comroid.csapi.common
             {
                 // for each column, collect longest data
                 var col = Columns[i];
-                foreach (var data in new[] { _header ? col.Name : string.Empty }
+                foreach (var data in new[] { Header ? col.Name : string.Empty }
                              .Concat(Rows
                                  .Where(row => !row.Separator)
                                  .Select(row => row._data[col])))
@@ -90,10 +89,10 @@ namespace comroid.csapi.common
 
             // todo: include outlines & inlines
             var sb = new StringBuilder();
-            var lines = _lineMode != null;
+            var lines = Lines != null;
             var totalW = lens.Aggregate(0, (a, b) => a + b + margin/**/) + cc + lens.Length * margin;
             var colTrims = lens.Select(x => 1 + x + margin * 2).Append(0).ToArray();
-            if (_header)
+            if (Header)
             {
                 if (lines) sb.Append(HoriDetailLine(totalW, colTrims, LineType.ConD, LineType.Bold));
 
@@ -116,8 +115,8 @@ namespace comroid.csapi.common
 
             if (lines)
                 sb.Append(HoriDetailLine(totalW, colTrims,
-                        _header ? LineType.IdxVertical : LineType.ConD,
-                        _header ? LineType.Bold : LineType.None));
+                        Header ? LineType.IdxVertical : LineType.ConD,
+                        Header ? LineType.Bold : LineType.None));
             int rc = 0;
             var rows = Rows;
             for (var ri = 0; ri < rows.Count; ri++)
@@ -175,12 +174,11 @@ namespace comroid.csapi.common
 
         public class Column
         {
-            public readonly string Name;
+            public string Name { get; set; }
             internal readonly bool _justifyRight;
 
-            public Column(string name, bool justifyRight)
+            public Column(bool justifyRight)
             {
-                Name = name;
                 _justifyRight = justifyRight;
             }
         }
@@ -188,7 +186,7 @@ namespace comroid.csapi.common
         #region Table Lining
         private char GetLining(LineType type)
         {
-            var db = LiningSymbols[_lineMode ?? LineMode.ASCII];
+            var db = LiningSymbols[Lines ?? LineMode.ASCII];
             if (db.Keys.Contains(type))
                 return db[type];
             (int nh, char c)? best = null;
