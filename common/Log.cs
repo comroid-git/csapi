@@ -110,6 +110,19 @@ public class Log<T> : ILog where T : class
         return e => Get().Write(exceptionLevel, message.ToString() + '\n' + e, fallback);
     }
 
+    public static void WithExceptionLogger(Action action, string message = "Unhandled Internal Exception",
+        LogLevel exceptionLevel = LogLevel.Fatal)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception e)
+        {
+            ExceptionLogger(message, exceptionLevel: exceptionLevel)(e);
+        }
+    }
+
     public static object? WithExceptionLogger(Func<object?> action, string message = "Unhandled Internal Exception",
         Func<object, object?>? fallback = null,
         LogLevel exceptionLevel = LogLevel.Fatal)
@@ -140,7 +153,7 @@ public class Log<T> : ILog where T : class
 
     public static Log<T> Get()
     {
-        return (Log<T>)ILog.cache.GetOrAdd(typeof(T), t => new Log<T>(ILog.BaseLogger, t));
+        return (Log<T>)ILog.cache.GetOrAdd(typeof(T), t => new Log<T>(t));
     }
 
     private R? _Log<R>(LogLevel level, object message, Func<object, R?>? fallback, bool error)
