@@ -36,6 +36,6 @@ namespace comroid.csapi.common
             }
         };
 
-        public static Version GetAssemblyVersion<T>() => typeof(T).Assembly.GetName().Version;
+        public static Version GetAssemblyVersion<T>() => typeof(T).Assembly.GetName().Version!;
     }
 }
