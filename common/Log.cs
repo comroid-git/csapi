@@ -64,7 +64,7 @@ public class Log<T> : ILog where T : class
     {
         get => _level ?? _parent?.Level ??
 #if DEBUG
-            LogLevel.Debug
+            LogLevel.Trace
 #else
             LogLevel.Info
 #endif
