@@ -101,13 +101,13 @@ public class Log<T> : ILog where T : class
     public static Func<Exception, object?> ExceptionLogger(object message, Func<object, object?>? fallback = null,
         LogLevel exceptionLevel = LogLevel.Fatal)
     {
-        return e => Get().Write(exceptionLevel, message.ToString() + '\n' + e, fallback);
+        return e => Get().Write(exceptionLevel, message + "\r\n" + e, fallback);
     }
 
     public static Func<Exception, R?> ExceptionLogger<R>(object message, Func<object, R?>? fallback = null,
         LogLevel exceptionLevel = LogLevel.Fatal)
     {
-        return e => Get().Write(exceptionLevel, message.ToString() + '\n' + e, fallback);
+        return e => Get().Write(exceptionLevel, message + "\r\n" + e, fallback);
     }
 
     public static void WithExceptionLogger(Action action, string message = "Unhandled Internal Exception",

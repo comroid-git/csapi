@@ -36,6 +36,8 @@ public static class StringUtil
 
         return str;
     }
+
+    public static string StripExtension(this string str, string ext) => str.Substring(0, str.IndexOf(ext));
 }
 
 [SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeEvident")]
@@ -181,10 +183,10 @@ public class TextTable
         {
             // for each column, collect longest data
             var col = Columns[i];
-            var text = row._data[col].ToString()!.Replace("\n", "\n\t");
+            var text = row._data[col].ToString()!.Replace("\n", "\r\n").Replace("\r\n", "\r\n\t");
             var len = text.Length;
             if (colLengths![i] < len)
-                colLengths[i] = len;
+                colLengths[i] = Math.Min(len, 64);
 
             // and then write column with updated lengths
             var lines = Lines != null;
@@ -196,7 +198,7 @@ public class TextTable
                 continue;
             }
 
-            sb.Append(text.Adjust(colLengths[i], col._justifyRight));
+            sb.Append(text.Adjust(Math.Max(colLengths[i], text.Length), col._justifyRight));
             if (i < cc - 1)
                 if (lines) sb.Append(indent);
                 else sb.Append(' ');
@@ -296,7 +298,7 @@ public class TextTable
             str += GetLining(line | detail | (useDiff ? diff : 0));
         }
 
-        return str + '\n';
+        return str + "\r\n";
     }
 
     public enum LineMode

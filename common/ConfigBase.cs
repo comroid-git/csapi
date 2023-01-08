@@ -34,7 +34,7 @@ public class ConfigBase : IEnumerable<KeyValuePair<string, object?>>
     public override string ToString() => Entries.ToDictionary(
             entry => entry.Key,
             entry => entry.Value.ConvertOutput())
-        .Aggregate("{\n", (str, entry) => str + $"\t{{{ entry.Key}: {entry.Value} }}") + "\n}";
+        .Aggregate("{\r\n", (str, entry) => str + $"\t{{{ entry.Key}: {entry.Value} }}") + "\r\n}";
 
     IEnumerator IEnumerable.GetEnumerator()
     {
