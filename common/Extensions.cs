@@ -48,3 +48,14 @@ public static class Extensions
         return BitConverter.ToString(md5.Hash).Replace("-", "").ToLower();
     }
 }
+
+public class TempFile : FileSystemInfo, IDisposable
+{
+    private readonly FileInfo _file;
+    public TempFile(string? path = null) => _file = new FileInfo(path ?? Path.GetTempFileName());
+    public override bool Exists => _file.Exists;
+    public override string Name => _file.Name;
+    public override string FullName => _file.FullName;
+    public override void Delete() => _file.Delete();
+    public void Dispose() => Delete();
+}
