@@ -4,6 +4,7 @@ namespace comroid.csapi.common
 {
     public static class DebugUtil
     {
+        [Obsolete]
         public static Action<T> WithExceptionHandler<T>(Action<Exception> handler, Action<T> action) => it =>
         {
             try
@@ -16,6 +17,7 @@ namespace comroid.csapi.common
             }
         };
 
+        [Obsolete]
         public static Func<TIn, TOut?> WithExceptionHandler<TIn, TOut>(Action<Exception> handler,
             Func<TIn, TOut> action) where TOut : class => WithExceptionHandler<TIn, TOut?>(e =>
         {
@@ -23,6 +25,7 @@ namespace comroid.csapi.common
             return null;
         }, action);
 
+        [Obsolete]
         public static Func<TIn, TOut> WithExceptionHandler<TIn, TOut>(Func<Exception, TOut> handler,
             Func<TIn, TOut> action) => it =>
         {
