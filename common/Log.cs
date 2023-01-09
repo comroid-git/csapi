@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 
 namespace comroid.csapi.common;
@@ -12,7 +13,6 @@ public interface ILog
     private protected static readonly TextTable.Column colLevel;
     private protected static readonly TextTable.Column colName;
     private protected static readonly TextTable.Column colMessage;
-    public static readonly Log<ILog> BaseLogger;
 
     static ILog()
     {
@@ -23,36 +23,49 @@ public interface ILog
         colLevel = writerAdapter.AddColumn("level");
         colName = writerAdapter.AddColumn("name");
         colMessage = writerAdapter.AddColumn("message");
-        BaseLogger = new Log<ILog>(null!, typeof(ILog));
     }
+    public static Log BaseLogger => Log.BaseLogger;
 
     Type Type { get; }
+    string Name { get; }
     bool FullNames { get; set; }
     LogLevel Level { get; set; }
     TextWriter Writer { get; set; }
-    object? Write(LogLevel level, object message, Func<object, object?>? fallback = null, bool error = false);
-    R? Write<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false);
+    object? At(LogLevel level, object message, Func<object, object?>? fallback = null, bool error = false);
+    R? At<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false);
 }
 
-public class Log<T> : ILog where T : class
+public class Log : ILog
 {
+    public static readonly Log BaseLogger = new("<root logger>");
     private readonly ILog? _parent;
     private bool? _fullNames;
     private LogLevel? _level;
     private TextWriter? _writer;
+    private string? _name;
 
-    public Log(Type type) : this(ILog.BaseLogger, type)
+    public Log(string name) : this(ILog.BaseLogger, name)
     {
     }
 
-    public Log(ILog parent, Type type
-    )
+    public Log(ILog parent, string name) : this(parent, typeof(Log), name)
+    {
+    }
+
+    protected Log(ILog parent, Type type, string? name)
     {
         _parent = parent;
         Type = type;
+        _name = name;
     }
 
     public Type Type { get; }
+
+    public virtual string Name
+    {
+        get => _name!;
+        set => _name = value;
+    }
 
     public bool FullNames
     {
@@ -77,83 +90,14 @@ public class Log<T> : ILog where T : class
         get => _writer ?? _parent?.Writer ?? Console.Out;
         set => _writer = value;
     }
-
-    public object? Write(LogLevel level, object message, Func<object, object?>? fallback = null, bool error = false)
+    public object? At(LogLevel level, object message, Func<object, object?>? fallback = null, bool error = false)
     {
         return _Log(level, message, fallback, error);
     }
 
-    public R? Write<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false)
+    public R? At<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false)
     {
         return _Log(level, message, fallback, error);
-    }
-
-    public static object? At(LogLevel level, object message, Func<object, object?>? fallback = null, bool error = false)
-    {
-        return Get().Write(level, message, fallback, error);
-    }
-
-    public static R? At<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false)
-    {
-        return Get().Write(level, message, fallback, error);
-    }
-
-    public static Func<Exception, object?> ExceptionLogger(object message, Func<object, object?>? fallback = null,
-        LogLevel exceptionLevel = LogLevel.Fatal)
-    {
-        return e => Get().Write(exceptionLevel, message + "\r\n" + e, fallback);
-    }
-
-    public static Func<Exception, R?> ExceptionLogger<R>(object message, Func<object, R?>? fallback = null,
-        LogLevel exceptionLevel = LogLevel.Fatal)
-    {
-        return e => Get().Write(exceptionLevel, message + "\r\n" + e, fallback);
-    }
-
-    public static void WithExceptionLogger(Action action, string message = "Unhandled Internal Exception",
-        LogLevel exceptionLevel = LogLevel.Fatal)
-    {
-        try
-        {
-            action();
-        }
-        catch (Exception e)
-        {
-            ExceptionLogger(message, exceptionLevel: exceptionLevel)(e);
-        }
-    }
-
-    public static object? WithExceptionLogger(Func<object?> action, string message = "Unhandled Internal Exception",
-        Func<object, object?>? fallback = null,
-        LogLevel exceptionLevel = LogLevel.Fatal)
-    {
-        try
-        {
-            return action();
-        }
-        catch (Exception e)
-        {
-            return ExceptionLogger(message, fallback, exceptionLevel)(e);
-        }
-    }
-
-    public static R? WithExceptionLogger<R>(Func<R?> action, string message = "Unhandled Internal Exception",
-        Func<object, R?>? fallback = null,
-        LogLevel exceptionLevel = LogLevel.Fatal)
-    {
-        try
-        {
-            return action();
-        }
-        catch (Exception e)
-        {
-            return ExceptionLogger(message, fallback, exceptionLevel)(e);
-        }
-    }
-
-    public static Log<T> Get()
-    {
-        return (Log<T>)ILog.cache.GetOrAdd(typeof(T), t => new Log<T>(t));
     }
 
     private R? _Log<R>(LogLevel level, object message, Func<object, R?>? fallback, bool error)
@@ -166,7 +110,7 @@ public class Log<T> : ILog where T : class
             {
                 { ILog.colTime, DateTime.Now },
                 { ILog.colLevel, _LV(level) },
-                { ILog.colName, (FullNames ? Type.FullName : Type.Name)! },
+                { ILog.colName, Name },
                 { ILog.colMessage, message }
             }
         }, Writer);
@@ -186,8 +130,8 @@ public class Log<T> : ILog where T : class
         if (useAnsi)
             str += level switch
             {
-                LogLevel.Trace => AnsiUtil.BackgroundWhite,
-                LogLevel.Debug => AnsiUtil.BackgroundBrightWhite,
+                LogLevel.Trace => AnsiUtil.BrightBlue,
+                LogLevel.Debug => AnsiUtil.BrightGreen,
                 LogLevel.Config => AnsiUtil.Blue,
                 LogLevel.Info => AnsiUtil.Green,
                 LogLevel.Warning => AnsiUtil.Yellow,
@@ -199,6 +143,88 @@ public class Log<T> : ILog where T : class
         if (useAnsi)
             str += AnsiUtil.Reset;
         return str;
+    }
+    
+
+    public Func<Exception, object?> ExceptionLogger(object message, Func<object, object?>? fallback = null,
+        LogLevel exceptionLevel = LogLevel.Fatal)
+    {
+        return e => At(exceptionLevel, message + "\r\n" + e, fallback);
+    }
+
+    public Func<Exception, R?> ExceptionLogger<R>(object message, Func<object, R?>? fallback = null,
+        LogLevel exceptionLevel = LogLevel.Fatal)
+    {
+        return e => At(exceptionLevel, message + "\r\n" + e, fallback);
+    }
+
+    public void RunWithExceptionLogger(Action action, string message = "Unhandled Internal Exception",
+        LogLevel exceptionLevel = LogLevel.Fatal)
+    {
+        try
+        {
+            action();
+        }
+        catch (Exception e)
+        {
+            ExceptionLogger(message, exceptionLevel: exceptionLevel)(e);
+        }
+    }
+
+    public object? RunWithExceptionLogger(Func<object?> action, string message = "Unhandled Internal Exception",
+        Func<object, object?>? fallback = null,
+        LogLevel exceptionLevel = LogLevel.Fatal)
+    {
+        try
+        {
+            return action();
+        }
+        catch (Exception e)
+        {
+            return ExceptionLogger(message, fallback, exceptionLevel)(e);
+        }
+    }
+
+    public R? RunWithExceptionLogger<R>(Func<R?> action, string message = "Unhandled Internal Exception",
+        Func<object, R?>? fallback = null,
+        LogLevel exceptionLevel = LogLevel.Fatal)
+    {
+        try
+        {
+            return action();
+        }
+        catch (Exception e)
+        {
+            return ExceptionLogger(message, fallback, exceptionLevel)(e);
+        }
+    }
+}
+
+public class Log<T> : Log where T : class
+{
+    public override string Name => FullNames ? Type.FullName! : Type.Name;
+
+    public Log(Type type) : base(ILog.BaseLogger, type, null)
+    {
+    }
+
+    public Log(ILog parent, Type type) : base(parent, type, null)
+    {
+    }
+
+    public new static object? At(LogLevel level, object message, Func<object, object?>? fallback = null, bool error = false)
+    {
+        return ((Log) Get()).At(level, message, fallback, error);
+    }
+
+    public new static R? At<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false)
+    {
+        return ((Log) Get()).At(level, message, fallback, error);
+    }
+
+    public static Log<T> Get()
+    {
+        return (Log<T>)ILog.cache.GetOrAdd(typeof(T), t => new Log<T>(t));
     }
 }
 
