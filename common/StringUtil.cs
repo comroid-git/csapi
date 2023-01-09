@@ -238,7 +238,7 @@ public class TextTable
             _justifyRight = justifyRight;
         }
 
-        public string Name { get; init; } = null!;
+        public string Name { get; set; } = null!;
     }
 
     #endregion
