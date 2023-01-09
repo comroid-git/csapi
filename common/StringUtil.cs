@@ -4,6 +4,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using Microsoft.VisualBasic.CompilerServices;
 
 namespace comroid.csapi.common;
 
@@ -38,6 +40,18 @@ public static class StringUtil
     }
 
     public static string StripExtension(this string str, string ext) => str.Substring(0, str.IndexOf(ext));
+
+    private static readonly Regex pattern = new("[^\\r]\\n", RegexOptions.Multiline | RegexOptions.CultureInvariant);
+    public static string Cleanup(this string str, bool keepNewlines = false, bool keepAnsi = false, bool keepWhitespaces = false)
+    {
+        if (!keepNewlines) while (pattern.IsMatch(str))
+            str = pattern.Replace(str, "\r\n");
+        if (!keepAnsi) while (str.ContainsAnsi())
+            str = str.RemoveAnsi();
+        if (!keepWhitespaces)
+            return str.Trim();
+        return str;
+    }
 }
 
 [SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeEvident")]
@@ -93,7 +107,7 @@ public class TextTable
                              .Where(row => !row.Separator)
                              .Select(row => row._data[col])))
             {
-                var len = data.ToString()!.Length;
+                var len = data.ToString()!.Cleanup(keepWhitespaces: true).Length;
                 if (lens[i] < len)
                     lens[i] = len;
             }
@@ -183,21 +197,21 @@ public class TextTable
         {
             // for each column, collect longest data
             var col = Columns[i];
-            var text = row._data[col].ToString()!.Replace("\n", "\r\n").Replace("\r\n", "\r\n\t");
+            var text = row._data[col].ToString()!;
             var len = text.Length;
             if (colLengths![i] < len)
                 colLengths[i] = Math.Min(len, 64);
 
             // and then write column with updated lengths
             var lines = Lines != null;
-            var totalW = colLengths.Aggregate(0, (a, b) => a + b + margin /**/) + cc + colLengths.Length * margin;
-            var colTrims = colLengths.Select(x => 1 + x + margin * 2).Append(0).ToArray();
             if (lines && row.Separator)
             {
+                var totalW = colLengths.Aggregate(0, (a, b) => a + b + margin /**/) + cc + colLengths.Length * margin;
+                var colTrims = colLengths.Select(x => 1 + x + margin * 2).Append(0).ToArray();
                 sb.Append(HoriDetailLine(totalW, colTrims, LineType.IdxVertical, row.Detail));
                 continue;
             }
-
+            
             sb.Append(text.Adjust(Math.Max(colLengths[i], text.Length), col._justifyRight));
             if (i < cc - 1)
                 if (lines) sb.Append(indent);
