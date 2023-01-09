@@ -1,11 +1,13 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 
 namespace comroid.csapi.common
     // ReSharper disable once ArrangeNamespaceBody
 {
 // https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html
-    public class AnsiUtil
+    public static class AnsiUtil
     {
         public const string Reset = "\u001b[0m";
         public const string Black = "\u001b[30m";
@@ -94,5 +96,15 @@ namespace comroid.csapi.common
 
             return Enabled;
         }
+
+        public static bool ContainsAnsi(this string str) => str.Contains('\u001b') && DebugUtil
+            .GetConstantsOfClass<string>(typeof(AnsiUtil))
+            .Select(e => e.Value)
+            .Any(str.Contains!);
+        public static string RemoveAnsi(this string str) => DebugUtil
+            .GetConstantsOfClass<string>(typeof(AnsiUtil))
+            .Select(e => e.Value)
+            .Where(x => x != null)
+            .Aggregate(str, (left, right) => left.Replace(right!, string.Empty));
     }
 }
