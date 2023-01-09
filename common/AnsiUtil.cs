@@ -69,7 +69,7 @@ namespace comroid.csapi.common
         public static string ByteColor(byte b) => $"\u001b[38;5;${b}m";
         public static string CursorPos(int row, int col) => $"\u001b[{row};{col}H";
 
-        public static bool Enabled => GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), out uint mode) &&
+        public static bool Enabled => GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), out var mode) &&
                                      (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == ENABLE_VIRTUAL_TERMINAL_PROCESSING;
 
         public static bool Init()
