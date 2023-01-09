@@ -1,9 +1,19 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 
 namespace comroid.csapi.common
 {
     public static class DebugUtil
     {
+        public static Dictionary<string, T?> GetConstantsOfClass<T>(Type of)
+        {
+            return of.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+                .Where(entry => entry.FieldType == typeof(T))
+                .ToDictionary(entry => entry.Name, entry => (T)entry.GetValue(null)!)!;
+        } 
+
         [Obsolete]
         public static Action<T> WithExceptionHandler<T>(Action<Exception> handler, Action<T> action) => it =>
         {
