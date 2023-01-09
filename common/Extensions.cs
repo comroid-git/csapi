@@ -6,8 +6,10 @@ using System.Text;
 
 namespace comroid.csapi.common;
 
+
 public static class Extensions
 {
+    
     public static int Redirect(this Stream input, Stream output, int bufferSize = 64)
     {
         int r, c = 0;
@@ -20,27 +22,39 @@ public static class Extensions
         return c;
     }
     
-    public static string CreateMd5ForFolder(this DirectoryInfo dir)
+    public static void UpdateMd5(this FileSystemInfo path, Func<FileSystemInfo, string> md5path)
+    {
+        var md5 = md5path(path);
+        new DirectoryInfo(Path.GetDirectoryName(md5)!).Create();
+        File.WriteAllText(md5, path.CreateMd5());
+    }
+
+    public static bool IsUpToDate(this FileSystemInfo path, Func<FileSystemInfo, string> md5path) =>
+        new FileInfo(md5path(path)) is { Exists: true } file &&
+        File.ReadAllText(file.FullName) == path.CreateMd5();
+
+    public static string CreateMd5(this FileSystemInfo path)
     {
         // https://stackoverflow.com/questions/3625658/how-do-you-create-the-hash-of-a-folder-in-c
         // assuming you want to include nested folders
-        var files = Directory.GetFiles(dir.FullName, "*.*", SearchOption.AllDirectories)
-            .OrderBy(p => p).ToList();
+        var files = path is FileInfo f
+            ? new[] { f.FullName }
+            : Directory.GetFiles(path.FullName, "*.*", SearchOption.AllDirectories).OrderBy(p => p).ToArray();
 
         var md5 = MD5.Create();
 
-        for(int i = 0; i < files.Count; i++)
+        for(int i = 0; i < files.Length; i++)
         {
             var file = files[i];
 
             // hash path
-            var relativePath = file.Substring(dir.FullName.Length + 1);
+            var relativePath = path is FileInfo ? path.Name : file.Substring(path.FullName.Length + 1);
             var pathBytes = Encoding.UTF8.GetBytes(relativePath.ToLower());
             md5.TransformBlock(pathBytes, 0, pathBytes.Length, pathBytes, 0);
 
             // hash contents
             var contentBytes = File.ReadAllBytes(file);
-            if (i == files.Count - 1)
+            if (i == files.Length - 1)
                 md5.TransformFinalBlock(contentBytes, 0, contentBytes.Length);
             else md5.TransformBlock(contentBytes, 0, contentBytes.Length, contentBytes, 0);
         }
