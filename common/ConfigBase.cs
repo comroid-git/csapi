@@ -93,5 +93,5 @@ public class ConfigEntry<T> : ConfigEntry
     }
     public override object? DefaultValue => defaultValue();
     public override object? ConvertInput(string str) => inputConverter(str);
-    public override string ConvertOutput() => outputConverter(value ?? defaultValue());
+    public override string ConvertOutput() => Type.IsArrayOf<string>() ? string.Join(", ", (string[])Value!) : outputConverter(value ?? defaultValue());
 }
