@@ -77,7 +77,7 @@ namespace comroid.csapi.common
         public static bool Enabled => _available && log.RunWithExceptionLogger(
             () => GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), out var mode) &&
                   (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-            ERROR_MESSAGE, _ => _available = false);
+            ERROR_MESSAGE, _ => _available = false, LogLevel.Warning);
 
         public static bool Init()
         {
@@ -102,7 +102,7 @@ namespace comroid.csapi.common
                 }
 
                 return Enabled;
-            }, ERROR_MESSAGE, _ => false);
+            }, ERROR_MESSAGE, _ => false, LogLevel.Warning);
         }
 
         public static bool ContainsAnsi(this string str) => str.Contains('\u001b') && DebugUtil
