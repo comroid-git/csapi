@@ -148,24 +148,31 @@ public class Log : ILog
         return str;
     }
 
+    private string _PE(Exception e, LogLevel exceptionLevel, bool? printException)
+    {
+        return printException ?? exceptionLevel <= LogLevel.Error ? "\r\n" + e : string.Empty;
+    }
 
     public Func<Exception, object?> ExceptionLogger(object message,
-        LogLevel exceptionLevel = LogLevel.Fatal, Func<object, object?>? fallback = null)
+        LogLevel exceptionLevel = LogLevel.Fatal, Func<object, object?>? fallback = null,
+        bool? printException = null)
     {
-        return e => At(exceptionLevel, message + "\r\n" + e, fallback);
+        return e => At(exceptionLevel, message + _PE(e, exceptionLevel, printException), fallback);
     }
 
     public Func<Exception, R?> ExceptionLogger<R>(object message,
-        LogLevel exceptionLevel = LogLevel.Fatal, Func<object, R?>? fallback = null)
+        LogLevel exceptionLevel = LogLevel.Fatal, Func<object, R?>? fallback = null,
+        bool? printException = null)
     {
-        return e => At(exceptionLevel, message + "\r\n" + e, fallback);
+        return e => At(exceptionLevel, message + _PE(e, exceptionLevel, printException), fallback);
     }
 
     #region Callable Wrapping
 
     public Action WrapWithExceptionLogger(Action action,
         string message = ILog.DEFAULT_ERROR_MESSAGE,
-        LogLevel exceptionLevel = LogLevel.Fatal)
+        LogLevel exceptionLevel = LogLevel.Fatal,
+        bool? printException = null)
     {
         return () =>
         {
@@ -175,13 +182,14 @@ public class Log : ILog
             }
             catch (Exception e)
             {
-                ExceptionLogger(message, exceptionLevel)(e);
+                ExceptionLogger(message, exceptionLevel, printException: printException)(e);
             }
         };
     }
     public Action<T> WrapWithExceptionLogger<T>(Action<T> action,
         string message = ILog.DEFAULT_ERROR_MESSAGE,
-        LogLevel exceptionLevel = LogLevel.Fatal)
+        LogLevel exceptionLevel = LogLevel.Fatal,
+        bool? printException = null)
     {
         return (t) =>
         {
@@ -191,14 +199,15 @@ public class Log : ILog
             }
             catch (Exception e)
             {
-                ExceptionLogger(message, exceptionLevel)(e);
+                ExceptionLogger(message, exceptionLevel, printException: printException)(e);
             }
         };
     }
 
     public Func<object?> WrapWithExceptionLogger(Func<object?> action, string message = ILog.DEFAULT_ERROR_MESSAGE,
         LogLevel exceptionLevel = LogLevel.Fatal,
-        Func<object, object?>? fallback = null)
+        Func<object, object?>? fallback = null,
+        bool? printException = null)
     {
         return () =>
         {
@@ -208,14 +217,15 @@ public class Log : ILog
             }
             catch (Exception e)
             {
-                return ExceptionLogger(message, exceptionLevel, fallback)(e);
+                return ExceptionLogger(message, exceptionLevel, fallback, printException)(e);
             }
         };
     }
 
     public Func<R?> WrapWithExceptionLogger<R>(Func<R?> action, string message = ILog.DEFAULT_ERROR_MESSAGE,
         LogLevel exceptionLevel = LogLevel.Fatal,
-        Func<object, R?>? fallback = null)
+        Func<object, R?>? fallback = null,
+        bool? printException = null)
     {
         return () =>
         {
@@ -225,29 +235,33 @@ public class Log : ILog
             }
             catch (Exception e)
             {
-                return ExceptionLogger(message, exceptionLevel, fallback)(e);
+                return ExceptionLogger(message, exceptionLevel, fallback, printException)(e);
             }
         };
     }
 
     public void RunWithExceptionLogger(Action action, string message = ILog.DEFAULT_ERROR_MESSAGE,
-        LogLevel exceptionLevel = LogLevel.Fatal)
+        LogLevel exceptionLevel = LogLevel.Fatal,
+        bool? printException = null)
     {
-        WrapWithExceptionLogger(action, message, exceptionLevel)();
+        WrapWithExceptionLogger(action, message, exceptionLevel, printException)();
     }
 
     public object? RunWithExceptionLogger(Func<object?> action, string message = ILog.DEFAULT_ERROR_MESSAGE,
         Func<object, object?>? fallback = null,
-        LogLevel exceptionLevel = LogLevel.Fatal)
+        LogLevel exceptionLevel = LogLevel.Fatal,
+        bool? printException = null)
     {
-        return WrapWithExceptionLogger(action, message, exceptionLevel, fallback)();
+        return WrapWithExceptionLogger(action, message, exceptionLevel, fallback, printException)();
     }
 
     public R? RunWithExceptionLogger<R>(Func<R?> action, string message = ILog.DEFAULT_ERROR_MESSAGE,
         Func<object, R?>? fallback = null,
-        LogLevel exceptionLevel = LogLevel.Fatal)
+        LogLevel exceptionLevel = LogLevel.Fatal,
+        bool? printException = null)
+
     {
-        return WrapWithExceptionLogger(action, message, exceptionLevel, fallback)();
+        return WrapWithExceptionLogger(action, message, exceptionLevel, fallback, printException)();
     }
 
     #endregion
