@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using System.IO;
 
 namespace comroid.csapi.common;
@@ -24,6 +23,7 @@ public interface ILog
         colName = writerAdapter.AddColumn("name");
         colMessage = writerAdapter.AddColumn("message");
     }
+
     public static Log BaseLogger => Log.BaseLogger;
 
     Type Type { get; }
@@ -41,8 +41,8 @@ public class Log : ILog
     private readonly ILog? _parent;
     private bool? _fullNames;
     private LogLevel? _level;
-    private TextWriter? _writer;
     private string? _name;
+    private TextWriter? _writer;
 
     public Log(string name) : this(ILog.BaseLogger, name)
     {
@@ -90,6 +90,7 @@ public class Log : ILog
         get => _writer ?? _parent?.Writer ?? Console.Out;
         set => _writer = value;
     }
+
     public object? At(LogLevel level, object message, Func<object, object?>? fallback = null, bool error = false)
     {
         return _Log(level, message, fallback, error);
@@ -144,10 +145,10 @@ public class Log : ILog
             str += AnsiUtil.Reset;
         return str;
     }
-    
 
-    public Func<Exception, object?> ExceptionLogger(object message, Func<object, object?>? fallback = null,
-        LogLevel exceptionLevel = LogLevel.Fatal)
+
+    public Func<Exception, object?> ExceptionLogger(object message,
+        LogLevel exceptionLevel = LogLevel.Fatal, Func<object, object?>? fallback = null)
     {
         return e => At(exceptionLevel, message + "\r\n" + e, fallback);
     }
@@ -158,52 +159,100 @@ public class Log : ILog
         return e => At(exceptionLevel, message + "\r\n" + e, fallback);
     }
 
+    #region Callable Wrapping
+
+    public Action WrapWithExceptionLogger(Action action,
+        string message = "Unhandled Internal Exception",
+        LogLevel exceptionLevel = LogLevel.Fatal)
+    {
+        return () =>
+        {
+            try
+            {
+                action();
+            }
+            catch (Exception e)
+            {
+                ExceptionLogger(message, exceptionLevel)(e);
+            }
+        };
+    }
+    public Action<T> WrapWithExceptionLogger<T>(Action<T> action,
+        string message = "Unhandled Internal Exception",
+        LogLevel exceptionLevel = LogLevel.Fatal)
+    {
+        return (t) =>
+        {
+            try
+            {
+                action(t);
+            }
+            catch (Exception e)
+            {
+                ExceptionLogger(message, exceptionLevel)(e);
+            }
+        };
+    }
+
+    public Func<object?> WrapWithExceptionLogger(Func<object?> action, string message = "Unhandled Internal Exception",
+        LogLevel exceptionLevel = LogLevel.Fatal,
+        Func<object, object?>? fallback = null)
+    {
+        return () =>
+        {
+            try
+            {
+                return action();
+            }
+            catch (Exception e)
+            {
+                return ExceptionLogger(message, exceptionLevel, fallback)(e);
+            }
+        };
+    }
+
+    public Func<R?> WrapWithExceptionLogger<R>(Func<R?> action, string message = "Unhandled Internal Exception",
+        LogLevel exceptionLevel = LogLevel.Fatal,
+        Func<object, R?>? fallback = null)
+    {
+        return () =>
+        {
+            try
+            {
+                return action();
+            }
+            catch (Exception e)
+            {
+                return ExceptionLogger(message, fallback, exceptionLevel)(e);
+            }
+        };
+    }
+
     public void RunWithExceptionLogger(Action action, string message = "Unhandled Internal Exception",
         LogLevel exceptionLevel = LogLevel.Fatal)
     {
-        try
-        {
-            action();
-        }
-        catch (Exception e)
-        {
-            ExceptionLogger(message, exceptionLevel: exceptionLevel)(e);
-        }
+        WrapWithExceptionLogger(action, message, exceptionLevel)();
     }
 
     public object? RunWithExceptionLogger(Func<object?> action, string message = "Unhandled Internal Exception",
         Func<object, object?>? fallback = null,
         LogLevel exceptionLevel = LogLevel.Fatal)
     {
-        try
-        {
-            return action();
-        }
-        catch (Exception e)
-        {
-            return ExceptionLogger(message, fallback, exceptionLevel)(e);
-        }
+        return WrapWithExceptionLogger(action, message, exceptionLevel, fallback)();
     }
 
     public R? RunWithExceptionLogger<R>(Func<R?> action, string message = "Unhandled Internal Exception",
         Func<object, R?>? fallback = null,
         LogLevel exceptionLevel = LogLevel.Fatal)
     {
-        try
-        {
-            return action();
-        }
-        catch (Exception e)
-        {
-            return ExceptionLogger(message, fallback, exceptionLevel)(e);
-        }
+        return WrapWithExceptionLogger(action, message, exceptionLevel, fallback)();
     }
+
+    #endregion
 }
 
 public class Log<T> : Log where T : class
 {
-    public override string Name => FullNames ? Type.FullName! : Type.Name;
-
     public Log(Type type) : base(ILog.BaseLogger, type, null)
     {
     }
@@ -212,14 +261,17 @@ public class Log<T> : Log where T : class
     {
     }
 
-    public new static object? At(LogLevel level, object message, Func<object, object?>? fallback = null, bool error = false)
+    public override string Name => FullNames ? Type.FullName! : Type.Name;
+
+    public new static object? At(LogLevel level, object message, Func<object, object?>? fallback = null,
+        bool error = false)
     {
-        return ((Log) Get()).At(level, message, fallback, error);
+        return ((Log)Get()).At(level, message, fallback, error);
     }
 
     public new static R? At<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false)
     {
-        return ((Log) Get()).At(level, message, fallback, error);
+        return ((Log)Get()).At(level, message, fallback, error);
     }
 
     public static Log<T> Get()
