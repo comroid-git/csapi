@@ -6,6 +6,7 @@ namespace comroid.csapi.common;
 
 public interface ILog
 {
+    private protected const string DEFAULT_ERROR_MESSAGE = "Unhandled internal Exception";
     private protected static readonly ConcurrentDictionary<Type, ILog> cache;
     private protected static readonly TextTable writerAdapter;
     private protected static readonly TextTable.Column colTime;
@@ -162,7 +163,7 @@ public class Log : ILog
     #region Callable Wrapping
 
     public Action WrapWithExceptionLogger(Action action,
-        string message = "Unhandled Internal Exception",
+        string message = ILog.DEFAULT_ERROR_MESSAGE,
         LogLevel exceptionLevel = LogLevel.Fatal)
     {
         return () =>
@@ -178,7 +179,7 @@ public class Log : ILog
         };
     }
     public Action<T> WrapWithExceptionLogger<T>(Action<T> action,
-        string message = "Unhandled Internal Exception",
+        string message = ILog.DEFAULT_ERROR_MESSAGE,
         LogLevel exceptionLevel = LogLevel.Fatal)
     {
         return (t) =>
@@ -194,7 +195,7 @@ public class Log : ILog
         };
     }
 
-    public Func<object?> WrapWithExceptionLogger(Func<object?> action, string message = "Unhandled Internal Exception",
+    public Func<object?> WrapWithExceptionLogger(Func<object?> action, string message = ILog.DEFAULT_ERROR_MESSAGE,
         LogLevel exceptionLevel = LogLevel.Fatal,
         Func<object, object?>? fallback = null)
     {
@@ -211,7 +212,7 @@ public class Log : ILog
         };
     }
 
-    public Func<R?> WrapWithExceptionLogger<R>(Func<R?> action, string message = "Unhandled Internal Exception",
+    public Func<R?> WrapWithExceptionLogger<R>(Func<R?> action, string message = ILog.DEFAULT_ERROR_MESSAGE,
         LogLevel exceptionLevel = LogLevel.Fatal,
         Func<object, R?>? fallback = null)
     {
@@ -228,20 +229,20 @@ public class Log : ILog
         };
     }
 
-    public void RunWithExceptionLogger(Action action, string message = "Unhandled Internal Exception",
+    public void RunWithExceptionLogger(Action action, string message = ILog.DEFAULT_ERROR_MESSAGE,
         LogLevel exceptionLevel = LogLevel.Fatal)
     {
         WrapWithExceptionLogger(action, message, exceptionLevel)();
     }
 
-    public object? RunWithExceptionLogger(Func<object?> action, string message = "Unhandled Internal Exception",
+    public object? RunWithExceptionLogger(Func<object?> action, string message = ILog.DEFAULT_ERROR_MESSAGE,
         Func<object, object?>? fallback = null,
         LogLevel exceptionLevel = LogLevel.Fatal)
     {
         return WrapWithExceptionLogger(action, message, exceptionLevel, fallback)();
     }
 
-    public R? RunWithExceptionLogger<R>(Func<R?> action, string message = "Unhandled Internal Exception",
+    public R? RunWithExceptionLogger<R>(Func<R?> action, string message = ILog.DEFAULT_ERROR_MESSAGE,
         Func<object, R?>? fallback = null,
         LogLevel exceptionLevel = LogLevel.Fatal)
     {
