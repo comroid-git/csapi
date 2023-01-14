@@ -38,14 +38,18 @@ public interface ILog
 
 public class Log : ILog
 {
-    public static readonly Log BaseLogger = new("<root logger>");
+    public static readonly Log BaseLogger = new();
     private readonly ILog? _parent;
     private bool? _fullNames;
     private LogLevel? _level;
     private string? _name;
     private TextWriter? _writer;
 
-    public Log(string? name) : this(typeof(Log), name)
+    public Log() : this(null!)
+    {
+    }
+
+    public Log(string name) : this(typeof(Log), name)
     {
     }
 
