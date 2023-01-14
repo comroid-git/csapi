@@ -104,8 +104,9 @@ public class Log : ILog
 
     private R? _Log<R>(LogLevel level, object message, Func<object, R?>? fallback, bool error)
     {
+        var fb = _FB(message, fallback);
         if (Level < level)
-            return _FB(message, fallback);
+            return fb;
         ILog.writerAdapter.WriteLine(new TextTable.Row
         {
             _data =
@@ -117,7 +118,7 @@ public class Log : ILog
             }
         }, Writer);
         if (error) throw new Exception(message.ToString());
-        return _FB(message, fallback);
+        return fb;
     }
 
     private R? _FB<R>(object message, Func<object, R?>? fallback)
@@ -154,8 +155,8 @@ public class Log : ILog
         return e => At(exceptionLevel, message + "\r\n" + e, fallback);
     }
 
-    public Func<Exception, R?> ExceptionLogger<R>(object message, Func<object, R?>? fallback = null,
-        LogLevel exceptionLevel = LogLevel.Fatal)
+    public Func<Exception, R?> ExceptionLogger<R>(object message,
+        LogLevel exceptionLevel = LogLevel.Fatal, Func<object, R?>? fallback = null)
     {
         return e => At(exceptionLevel, message + "\r\n" + e, fallback);
     }
@@ -224,7 +225,7 @@ public class Log : ILog
             }
             catch (Exception e)
             {
-                return ExceptionLogger(message, fallback, exceptionLevel)(e);
+                return ExceptionLogger(message, exceptionLevel, fallback)(e);
             }
         };
     }
