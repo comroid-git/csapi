@@ -16,13 +16,13 @@ public interface ILog
 
     static ILog()
     {
-        AnsiUtil.Init();
         cache = new ConcurrentDictionary<Type, ILog>();
         writerAdapter = new TextTable { Lines = TextTable.LineMode.ASCII, Header = false };
         colTime = writerAdapter.AddColumn("time");
         colLevel = writerAdapter.AddColumn("level");
         colName = writerAdapter.AddColumn("name");
         colMessage = writerAdapter.AddColumn("message");
+        AnsiUtil.Init();
     }
 
     public static Log BaseLogger => Log.BaseLogger;
