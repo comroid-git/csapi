@@ -44,15 +44,15 @@ public class Log : ILog
     private string? _name;
     private TextWriter? _writer;
 
-    public Log(string name) : this(ILog.BaseLogger, name)
+    public Log(string? name) : this(typeof(Log), name)
     {
     }
 
-    public Log(ILog parent, string name) : this(parent, typeof(Log), name)
+    public Log(Type type, string? name = null) : this(ILog.BaseLogger, type, name)
     {
     }
 
-    protected Log(ILog parent, Type type, string? name)
+    public Log(ILog parent, Type type, string? name)
     {
         _parent = parent;
         Type = type;
@@ -63,7 +63,7 @@ public class Log : ILog
 
     public virtual string Name
     {
-        get => _name!;
+        get => _name ?? (FullNames ? Type.FullName : Type.Name) ?? "Logger";
         set => _name = value;
     }
 
