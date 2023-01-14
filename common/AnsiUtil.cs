@@ -55,6 +55,8 @@ namespace comroid.csapi.common
         private const int STD_OUTPUT_HANDLE = -11;
         private const uint ENABLE_VIRTUAL_TERMINAL_PROCESSING = 0x0004;
         private const uint DISABLE_NEWLINE_AUTO_RETURN = 0x0008;
+        private const string ERROR_MESSAGE = "Unable to load ANSI support";
+        private static readonly Log log = new(typeof(AnsiUtil));
 
         [DllImport("kernel32.dll")]
         private static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
@@ -71,30 +73,35 @@ namespace comroid.csapi.common
         public static string ByteColor(byte b) => $"\u001b[38;5;${b}m";
         public static string CursorPos(int row, int col) => $"\u001b[{row};{col}H";
 
-        public static bool Enabled => GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), out var mode) &&
-                                     (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+        public static bool Enabled => log.RunWithExceptionLogger(
+            () => GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), out var mode) &&
+                  (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == ENABLE_VIRTUAL_TERMINAL_PROCESSING,
+            ERROR_MESSAGE, _ => false);
 
         public static bool Init()
         {
-            if (Enabled)
-                return false;
-            var iStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
-            if (!GetConsoleMode(iStdOut, out uint outConsoleMode))
+            return log.RunWithExceptionLogger(() =>
             {
-                Console.WriteLine("Failed to get output console mode");
-                Console.ReadKey();
-                return false;
-            }
+                if (Enabled)
+                    return false;
+                var iStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+                if (!GetConsoleMode(iStdOut, out uint outConsoleMode))
+                {
+                    Console.WriteLine("Failed to get output console mode");
+                    Console.ReadKey();
+                    return false;
+                }
 
-            outConsoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
-            if (!SetConsoleMode(iStdOut, outConsoleMode))
-            {
-                Console.WriteLine($"Failed to set output console mode, error code: {GetLastError()}");
-                Console.ReadKey();
-                return false;
-            }
+                outConsoleMode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN;
+                if (!SetConsoleMode(iStdOut, outConsoleMode))
+                {
+                    Console.WriteLine($"Failed to set output console mode, error code: {GetLastError()}");
+                    Console.ReadKey();
+                    return false;
+                }
 
-            return Enabled;
+                return Enabled;
+            }, ERROR_MESSAGE, _ => false);
         }
 
         public static bool ContainsAnsi(this string str) => str.Contains('\u001b') && DebugUtil
