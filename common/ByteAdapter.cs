@@ -1,6 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Metadata;
 using System.Text;
 
 namespace comroid.csapi.common;
@@ -15,13 +19,14 @@ public interface IByteContainer
 {
     public byte[] Bytes
         => new[] { (byte)DataType }
-            .Concat((byte)DataType < 16 ? ArraySegment<byte>.Empty : BitConverter.GetBytes(Length))
+            .Concat(DataType < DataType.Object ? ArraySegment<byte>.Empty : BitConverter.GetBytes(Length))
+            .Concat(BitConverter.GetBytes(Header.Bytes.Length))
             .Concat(Header.Bytes)
             .Concat(BodyBytes).ToArray();
     public IByteContainer Header => Empty();
     public DataType DataType => DataType.Object;
     public int Length => DataType.GetLength(() => Bytes);
-    public IEnumerable<byte> BodyBytes => Members.SelectMany(x => x.Bytes);
+    public IEnumerable<byte> BodyBytes => BitConverter.GetBytes(Members.Count).Concat(Members.SelectMany(x => x.Bytes));
     public List<IByteContainer> Members => new();
 
     public static IByteContainer Empty() => new Constant();
@@ -49,32 +54,83 @@ public interface IByteContainer
             IByteContainer c => c,
             _ => throw new ArgumentException("Cannot convert value", nameof(value))
         };
-    public T Convert<T>(IStringCache? strings = null, Encoding? encoding = null) => (T)(object)(DataType switch
+    public T Convert<T>(IStringCache? strings = null, Encoding? encoding = null)
+        => Bytes.Read<T>(encoding, strings);
+
+    public static Abstract FromStream<T>(Stream stream, IStringCache? strings = null, Encoding? encoding = null)
+        where T : Abstract => FromStream(stream, typeof(T), strings, encoding);
+    public static Abstract FromStream(Stream stream, Type type, IStringCache? strings = null, Encoding? encoding = null)
+    { // todo: inspect
+        var dataType = (DataType)stream.ReadByte();
+        if (dataType < DataType.Object)
+            return stream.ReadContainer(dataType);
+        var bodyLen = stream.Read<int>();
+        var headLen = stream.Read<int>();
+        var headData = stream.Read(headLen);
+        var memberCount = stream.Read<int>();
+        var members = new List<IByteContainer>();
+        var obj = (Abstract)type.GetConstructor(BindingFlags.Public, Type.EmptyTypes)?.Invoke(null)!;
+
+        var c = 0;
+        foreach (var (prop, attr) in FindAttributes(type))
+        {
+            var value = FromStream(stream, prop.PropertyType, strings, encoding);
+            prop.SetValue(obj, value);
+            members.Add(value);
+            c++;
+        }
+        obj.Members = members;
+
+        if (c != memberCount)
+            throw new Exception("Invalid member count was read; cannot continue");
+
+        return obj;
+    }
+
+    public void Load(Stream stream, IStringCache? strings = null, Encoding? encoding = null)
     {
-        DataType.Empty => null!,
-        DataType.Byte => Bytes[0],
-        DataType.SByte => System.Convert.ToSByte(Bytes[0]),
-        DataType.Char => BitConverter.ToChar(Bytes),
-        DataType.Short => BitConverter.ToInt16(Bytes),
-        DataType.UShort => BitConverter.ToUInt16(Bytes),
-        DataType.Int => BitConverter.ToInt32(Bytes),
-        DataType.UInt => BitConverter.ToUInt32(Bytes),
-        DataType.Long => BitConverter.ToInt64(Bytes),
-        DataType.ULong => BitConverter.ToUInt64(Bytes),
-        DataType.Float => BitConverter.ToSingle(Bytes),
-        DataType.Double => BitConverter.ToDouble(Bytes),
-        DataType.String => (encoding ?? Encoding.ASCII).GetString(Bytes),
-        DataType.StringCached => strings == null 
-            ? throw new ArgumentException("StringCache must not be null!", nameof(strings)) 
-            : strings[BitConverter.ToInt32(Bytes)],
-        _ => throw new ArgumentException("Cannot convert value of type " + DataType, nameof(DataType))
-    });
+        if (!stream.CanRead)
+            throw new ArgumentException("Cannot read from stream", nameof(stream));
+
+        //BodyBytes = FromStream<object>(stream, strings, encoding);
+    }
+
+    public void Save(Stream stream, IStringCache? strings = null, Encoding? encoding = null)
+    {
+        if (!stream.CanWrite)
+            throw new ArgumentException("Cannot write to stream", nameof(stream));
+        
+        stream.Write(Bytes);
+        
+        var type = GetType();
+        foreach (var (prop, attr) in FindAttributes(type))
+        {
+            var obj = prop.GetValue(this);
+            try
+            {
+                var it = Const(obj, strings, encoding);
+                stream.Write(it.Bytes);
+            }
+            catch (ArgumentException)
+            {
+                Log<IByteContainer>.At(LogLevel.Debug, $"Converting value {prop.Name} / {obj} failed; skipping it");
+            }
+        }
+        stream.Flush();
+    }
+
+    protected static IEnumerable<(PropertyInfo prop, ByteDataAttribute attr)> FindAttributes(Type type) =>
+        type.GetMembers(BindingFlags.Public | BindingFlags.GetProperty)
+            .Select(member => (member, member.GetCustomAttribute<ByteDataAttribute>()!))
+            .Where(pair => pair.Item2 != null)
+            .Select(pair => (type.GetProperty(pair.member.Name)!, pair.Item2))
+            .OrderBy(pair => pair.Item2.Index);
 
     public abstract class Abstract : IByteContainer
     {
         public DataType DataType { get; }
         public virtual IByteContainer Header { get; init; } = Empty();
-        public List<IByteContainer> Members { get; } = new();
+        public List<IByteContainer> Members { get; internal set; } = new();
         public virtual IEnumerable<byte> BodyBytes => Members.SelectMany(x => x.Bytes);
 
         protected Abstract(DataType dataType)
@@ -105,10 +161,7 @@ public interface IByteContainer
     }
 }
 
-public class ByteAdapter
-{
-}
-
+[AttributeUsage(AttributeTargets.Property)]
 public class ByteDataAttribute : Attribute
 {
     public readonly int Index;
@@ -135,17 +188,87 @@ public enum DataType : byte
     ULong = 9,
     Float = 10,
     Double = 11,
+    // size is written as int32 in first 4 bytes
+    String = 14,
+    // size is sizeof(int)
     StringCached = 15,
     
     // unmanaged types; size is unknown
-    String = 32,
-    Concatenated = 128,
-    Object = 255
+    Object = 16,
+    Concatenated = 63
 }
 
 public static class ByteAdapterExtensions
 {
-    public static int GetLength(this DataType type, Func<byte[]> Bytes) => type switch
+    public static byte[] Read(this Stream stream, int n)
+    {
+        var buf = new byte[n];
+        if (stream.Read(buf) != n)
+            Log.BaseLogger.At(LogLevel.Warning, $"Read returned less bytes than expected! Expect errors");
+        return buf;
+    }
+
+    public static T Read<T>(this byte[] data, Encoding? encoding = null, IStringCache? strings = null)
+        => Read<T>(new MemoryStream(data), encoding, strings);
+
+    public static IByteContainer.Constant ReadContainer(this Stream stream, DataType? type = null)
+    {
+        type ??= (DataType)stream.ReadByte();
+        var len = type.Value.GetLength();
+        if (len == -1 && type == DataType.String)
+            len = stream.Read<int>();
+        if (len == -1)
+            throw new Exception("Invalid DataType: " + type);
+        var data = stream.Read(len);
+        return new IByteContainer.Constant(type.Value, data);
+    }
+
+    public static T Read<T>(this Stream stream, Encoding? encoding = null, IStringCache? strings = null) => (T)Read(stream, typeof(T), encoding, strings);
+    public static object Read(this Stream stream, Type type, Encoding? encoding = null, IStringCache? strings = null)
+    {
+        var len = type.GetLength();
+        if (len == -1 && strings == null && type == typeof(string))
+            len = stream.Read<int>();
+        if (len == -1)
+            throw new ArgumentException("Invalid Type: " + type, nameof(type));
+        var data = stream.Read(len);
+        return type.Name switch
+        {
+            "byte" => data[0],
+            "sbyte" => Convert.ToSByte(data[0]),
+            "char" => BitConverter.ToChar(data),
+            "short" => BitConverter.ToInt16(data),
+            "ushort" => BitConverter.ToUInt16(data),
+            "int" => BitConverter.ToInt32(data),
+            "uint" => BitConverter.ToUInt32(data),
+            "long" => BitConverter.ToInt64(data),
+            "ulong" => BitConverter.ToUInt64(data),
+            "float" => BitConverter.ToSingle(data),
+            "double" => BitConverter.ToDouble(data),
+            "string" => strings != null
+                ? strings[BitConverter.ToInt32(data)]
+                : encoding!.GetString(data),
+            _ => throw new ArgumentException("Invalid Type: " + type, nameof(type))
+        };
+    }
+
+    public static int GetLength(this Type type) => type.Name switch
+    {
+        "byte" => sizeof(byte),
+        "sbyte" => sizeof(sbyte),
+        "char" => sizeof(char),
+        "short" => sizeof(short),
+        "ushort" => sizeof(ushort),
+        "int" => sizeof(int),
+        "uint" => sizeof(uint),
+        "long" => sizeof(long),
+        "ulong" => sizeof(ulong),
+        "float" => sizeof(float),
+        "double" => sizeof(double),
+        _ => -1
+    };
+    
+    public static int GetLength(this DataType type, Func<byte[]>? Bytes = null) => type switch
     {
         DataType.Empty => 0,
         DataType.Byte => sizeof(byte),
@@ -160,6 +283,6 @@ public static class ByteAdapterExtensions
         DataType.Float => sizeof(float),
         DataType.Double => sizeof(double),
         DataType.StringCached => sizeof(int),
-        _ => Bytes().Length
+        _ => Bytes?.Invoke()?.Length ?? -1
     };
 }
