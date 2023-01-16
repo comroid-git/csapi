@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -19,13 +20,13 @@ public interface IByteContainer
 {
     public byte[] Bytes
         => new[] { (byte)DataType }
-            .Concat(DataType < DataType.Object ? ArraySegment<byte>.Empty : BitConverter.GetBytes(Length))
-            .Concat(BitConverter.GetBytes(Header.Bytes.Length))
-            .Concat(Header.Bytes)
-            .Concat(BodyBytes).ToArray();
-    public IByteContainer Header => Empty();
+            .Concat(BitConverter.GetBytes(Header.Length))
+            .Concat(Header)
+            .Concat(DataType < DataType.Object ? ArraySegment<byte>.Empty : BitConverter.GetBytes(BodyBytes.Count()))
+            .Concat(BodyBytes)
+            .ToArray();
+    public byte[] Header => Array.Empty<byte>();
     public DataType DataType => DataType.Object;
-    public int Length => DataType.GetLength(() => Bytes);
     public IEnumerable<byte> BodyBytes => BitConverter.GetBytes(Members.Count).Concat(Members.SelectMany(x => x.Bytes));
     public List<IByteContainer> Members => new();
 
@@ -64,9 +65,9 @@ public interface IByteContainer
         var dataType = (DataType)stream.ReadByte();
         if (dataType < DataType.Object)
             return stream.ReadContainer(dataType);
-        var bodyLen = stream.Read<int>();
         var headLen = stream.Read<int>();
         var headData = stream.Read(headLen);
+        var bodyLen = stream.Read<int>();
         var memberCount = stream.Read<int>();
         obj ??= (IByteContainer)type.GetConstructor(BindingFlags.Public, Type.EmptyTypes)?.Invoke(null)!;
 
@@ -129,7 +130,7 @@ public interface IByteContainer
     public abstract class Abstract : IByteContainer
     {
         public DataType DataType { get; }
-        public virtual IByteContainer Header { get; } = Empty();
+        public virtual byte[] Header { get; } = Array.Empty<byte>();
         public List<IByteContainer> Members { get; } = new();
         public virtual IEnumerable<byte> BodyBytes => Members.SelectMany(x => x.Bytes);
 
@@ -204,7 +205,7 @@ public static class ByteAdapterExtensions
     {
         var buf = new byte[n];
         if (stream.Read(buf) != n)
-            Log.BaseLogger.At(LogLevel.Warning, $"Read returned less bytes than expected! Expect errors");
+            Log<IByteContainer>.At(LogLevel.Warning, $"Read returned less bytes than expected! Expect errors");
         return buf;
     }
 
@@ -214,7 +215,7 @@ public static class ByteAdapterExtensions
     public static IByteContainer.Constant ReadContainer(this Stream stream, DataType? type = null)
     {
         type ??= (DataType)stream.ReadByte();
-        var len = type.Value.GetLength();
+        var len = type.Value.GetLength() ?? -1;
         if (len == -1 && type == DataType.String)
             len = stream.Read<int>();
         if (len == -1)
@@ -234,18 +235,18 @@ public static class ByteAdapterExtensions
         var data = stream.Read(len);
         return type.Name switch
         {
-            "byte" => data[0],
-            "sbyte" => Convert.ToSByte(data[0]),
-            "char" => BitConverter.ToChar(data),
-            "short" => BitConverter.ToInt16(data),
-            "ushort" => BitConverter.ToUInt16(data),
-            "int" => BitConverter.ToInt32(data),
-            "uint" => BitConverter.ToUInt32(data),
-            "long" => BitConverter.ToInt64(data),
-            "ulong" => BitConverter.ToUInt64(data),
-            "float" => BitConverter.ToSingle(data),
-            "double" => BitConverter.ToDouble(data),
-            "string" => strings != null
+            "Byte" => data[0],
+            "SByte" => Convert.ToSByte(data[0]),
+            "Char" => BitConverter.ToChar(data),
+            "Int16" => BitConverter.ToInt16(data),
+            "UInt16" => BitConverter.ToUInt16(data),
+            "Int32" => BitConverter.ToInt32(data),
+            "UInt32" => BitConverter.ToUInt32(data),
+            "Int64" => BitConverter.ToInt64(data),
+            "UInt64" => BitConverter.ToUInt64(data),
+            "Single" => BitConverter.ToSingle(data),
+            "Double" => BitConverter.ToDouble(data),
+            "String" => strings != null
                 ? strings[BitConverter.ToInt32(data)]
                 : encoding!.GetString(data),
             _ => throw new ArgumentException("Invalid Type: " + type, nameof(type))
@@ -254,21 +255,21 @@ public static class ByteAdapterExtensions
 
     public static int GetLength(this Type type) => type.Name switch
     {
-        "byte" => sizeof(byte),
-        "sbyte" => sizeof(sbyte),
-        "char" => sizeof(char),
-        "short" => sizeof(short),
-        "ushort" => sizeof(ushort),
-        "int" => sizeof(int),
-        "uint" => sizeof(uint),
-        "long" => sizeof(long),
-        "ulong" => sizeof(ulong),
-        "float" => sizeof(float),
-        "double" => sizeof(double),
+        "Byte" => sizeof(byte),
+        "SByte" => sizeof(sbyte),
+        "Char" => sizeof(char),
+        "Int16" => sizeof(short),
+        "UInt16" => sizeof(ushort),
+        "Int32" => sizeof(int),
+        "UInt32" => sizeof(uint),
+        "Int64" => sizeof(long),
+        "UInt64" => sizeof(ulong),
+        "Single" => sizeof(float),
+        "Double" => sizeof(double),
         _ => -1
     };
     
-    public static int GetLength(this DataType type, Func<byte[]>? Bytes = null) => type switch
+    public static int? GetLength(this DataType type, Func<byte[]>? Bytes = null) => type switch
     {
         DataType.Empty => 0,
         DataType.Byte => sizeof(byte),
@@ -283,6 +284,6 @@ public static class ByteAdapterExtensions
         DataType.Float => sizeof(float),
         DataType.Double => sizeof(double),
         DataType.StringCached => sizeof(int),
-        _ => Bytes?.Invoke()?.Length ?? -1
+        _ => Bytes?.Invoke()?.Length
     };
 }

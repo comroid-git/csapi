@@ -26,23 +26,32 @@ public class ByteAdapterTest
         Console.WriteLine("path=" + path);
     }
 
+    [TearDown]
+    public void teardown()
+    {
+        obj = null!;
+    }
+
     [Test]
     public void _1_SaveObj()
     {
-        (obj as IByteContainer).Save(new FileStream(path, FileMode.Create));
+        using var fileStream = new FileStream(path, FileMode.Create);
+        (obj as IByteContainer).Save(fileStream);
     }
 
     [Test]
     public void _2_LoadObj()
     {
-        (obj as IByteContainer).Load(new FileStream(path, FileMode.Open));
+        using var fileStream = new FileStream(path, FileMode.Open);
+        (obj as IByteContainer).Load(fileStream);
         Console.WriteLine("read=" + obj);
     }
 
     [Test]
     public void _3_LoadObj_Direct()
     {
-        obj = IByteContainer.FromStream<TestObj>(new FileStream(path, FileMode.Open));
+        using var fileStream = new FileStream(path, FileMode.Open);
+        obj = IByteContainer.FromStream<TestObj>(fileStream);
         Console.WriteLine("read=" + obj);
     }
 }
