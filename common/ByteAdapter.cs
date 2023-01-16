@@ -68,7 +68,6 @@ public interface IByteContainer
         var headLen = stream.Read<int>();
         var headData = stream.Read(headLen);
         var memberCount = stream.Read<int>();
-        var members = new List<IByteContainer>();
         var obj = (Abstract)type.GetConstructor(BindingFlags.Public, Type.EmptyTypes)?.Invoke(null)!;
 
         var c = 0;
@@ -76,10 +75,8 @@ public interface IByteContainer
         {
             var value = FromStream(stream, prop.PropertyType, strings, encoding);
             prop.SetValue(obj, value);
-            members.Add(value);
             c++;
         }
-        obj.Members = members;
 
         if (c != memberCount)
             throw new Exception("Invalid member count was read; cannot continue");
@@ -120,7 +117,7 @@ public interface IByteContainer
     }
 
     protected static IEnumerable<(PropertyInfo prop, ByteDataAttribute attr)> FindAttributes(Type type) =>
-        type.GetMembers(BindingFlags.Public | BindingFlags.GetProperty)
+        type.GetMembers(BindingFlags.Public | BindingFlags.GetProperty | BindingFlags.SetProperty)
             .Select(member => (member, member.GetCustomAttribute<ByteDataAttribute>()!))
             .Where(pair => pair.Item2 != null)
             .Select(pair => (type.GetProperty(pair.member.Name)!, pair.Item2))
