@@ -58,7 +58,7 @@ public interface IByteContainer
         => Bytes.Read<T>(encoding, strings);
 
     public static T FromStream<T>(Stream stream, IStringCache? strings = null, Encoding? encoding = null)
-        where T : Abstract => (T)FromStream(stream, typeof(T), null, strings, encoding);
+        where T : IByteContainer => (T)FromStream(stream, typeof(T), null, strings, encoding);
     public static IByteContainer FromStream(Stream stream, Type type, IByteContainer? obj = null, IStringCache? strings = null, Encoding? encoding = null)
     { // todo: inspect
         var dataType = (DataType)stream.ReadByte();
@@ -68,7 +68,7 @@ public interface IByteContainer
         var headLen = stream.Read<int>();
         var headData = stream.Read(headLen);
         var memberCount = stream.Read<int>();
-        obj ??= (Abstract)type.GetConstructor(BindingFlags.Public, Type.EmptyTypes)?.Invoke(null)!;
+        obj ??= (IByteContainer)type.GetConstructor(BindingFlags.Public, Type.EmptyTypes)?.Invoke(null)!;
 
         var c = 0;
         foreach (var (prop, attr) in FindAttributes(type))
@@ -129,11 +129,11 @@ public interface IByteContainer
     public abstract class Abstract : IByteContainer
     {
         public DataType DataType { get; }
-        public virtual IByteContainer Header { get; init; } = Empty();
-        public List<IByteContainer> Members { get; internal set; } = new();
+        public virtual IByteContainer Header { get; } = Empty();
+        public List<IByteContainer> Members { get; } = new();
         public virtual IEnumerable<byte> BodyBytes => Members.SelectMany(x => x.Bytes);
 
-        protected Abstract(DataType dataType)
+        protected Abstract(DataType dataType = DataType.Object)
         {
             DataType = dataType;
         }
