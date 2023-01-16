@@ -57,9 +57,9 @@ public interface IByteContainer
     public T Convert<T>(IStringCache? strings = null, Encoding? encoding = null)
         => Bytes.Read<T>(encoding, strings);
 
-    public static Abstract FromStream<T>(Stream stream, IStringCache? strings = null, Encoding? encoding = null)
-        where T : Abstract => FromStream(stream, typeof(T), strings, encoding);
-    public static Abstract FromStream(Stream stream, Type type, IStringCache? strings = null, Encoding? encoding = null)
+    public static T FromStream<T>(Stream stream, IStringCache? strings = null, Encoding? encoding = null)
+        where T : Abstract => (T)FromStream(stream, typeof(T), null, strings, encoding);
+    public static IByteContainer FromStream(Stream stream, Type type, IByteContainer? obj = null, IStringCache? strings = null, Encoding? encoding = null)
     { // todo: inspect
         var dataType = (DataType)stream.ReadByte();
         if (dataType < DataType.Object)
@@ -68,12 +68,12 @@ public interface IByteContainer
         var headLen = stream.Read<int>();
         var headData = stream.Read(headLen);
         var memberCount = stream.Read<int>();
-        var obj = (Abstract)type.GetConstructor(BindingFlags.Public, Type.EmptyTypes)?.Invoke(null)!;
+        obj ??= (Abstract)type.GetConstructor(BindingFlags.Public, Type.EmptyTypes)?.Invoke(null)!;
 
         var c = 0;
         foreach (var (prop, attr) in FindAttributes(type))
         {
-            var value = FromStream(stream, prop.PropertyType, strings, encoding);
+            var value = FromStream(stream, prop.PropertyType, obj, strings, encoding);
             prop.SetValue(obj, value);
             c++;
         }
@@ -88,8 +88,7 @@ public interface IByteContainer
     {
         if (!stream.CanRead)
             throw new ArgumentException("Cannot read from stream", nameof(stream));
-
-        //BodyBytes = FromStream<object>(stream, strings, encoding);
+        FromStream(stream, GetType(), this, strings, encoding);
     }
 
     public void Save(Stream stream, IStringCache? strings = null, Encoding? encoding = null)
@@ -105,7 +104,11 @@ public interface IByteContainer
             var obj = prop.GetValue(this);
             try
             {
-                var it = Const(obj, strings, encoding);
+                var it = obj as IByteContainer;
+                if (obj is IEnumerable && obj.GetType().GenericTypeArguments[0].IsAssignableTo(typeof(IByteContainer)))
+                    it = Concat(((IEnumerable<IByteContainer>)obj).ToArray());
+                else if (it == null)
+                    it = Const(obj, strings, encoding);
                 stream.Write(it.Bytes);
             }
             catch (ArgumentException)
