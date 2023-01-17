@@ -32,10 +32,11 @@ public interface IByteContainer
 
     public static IByteContainer Empty() => new Constant();
     public static IByteContainer Concat(params IByteContainer[] arr) => new Concatenated(arr);
-    public static IByteContainer Const<T>(T value, IStringCache? strings = null, Encoding? encoding = null)
+    public static IByteContainer Const(object? value, IStringCache? strings = null, Encoding? encoding = null)
         => value switch
         {
             null => Empty(),
+            Enum e => Const(System.Convert.ChangeType(e, e.GetType().GetEnumUnderlyingType())),
             byte b => new Constant(DataType.Byte, b),
             sbyte sb => new Constant(DataType.SByte, System.Convert.ToByte(sb)),
             char c => new Constant(DataType.Char, BitConverter.GetBytes(c)),
@@ -110,7 +111,7 @@ public interface IByteContainer
                     it = Concat(((IEnumerable<IByteContainer>)obj).ToArray());
                 else if (it == null)
                     it = Const(obj, strings, encoding);
-                stream.Write(it.Bytes);
+                stream.Write(it.BodyBytes.ToArray());
             }
             catch (ArgumentException)
             {
@@ -121,10 +122,9 @@ public interface IByteContainer
     }
 
     protected static IEnumerable<(PropertyInfo prop, ByteDataAttribute attr)> FindAttributes(Type type) =>
-        type.GetMembers(BindingFlags.Public | BindingFlags.GetProperty | BindingFlags.SetProperty)
-            .Select(member => (member, member.GetCustomAttribute<ByteDataAttribute>()!))
+        type.GetProperties()
+            .Select(prop => (prop, prop.GetCustomAttribute<ByteDataAttribute>()!))
             .Where(pair => pair.Item2 != null)
-            .Select(pair => (type.GetProperty(pair.member.Name)!, pair.Item2))
             .OrderBy(pair => pair.Item2.Index);
 
     public abstract class Abstract : IByteContainer
