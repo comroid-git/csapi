@@ -43,6 +43,7 @@ public class ByteAdapterTest
     public void _2_LoadObj()
     {
         using var fileStream = new FileStream(path, FileMode.Open);
+        obj = new TestObj();
         (obj as IByteContainer).Load(fileStream);
         Console.WriteLine("read=" + obj);
     }
