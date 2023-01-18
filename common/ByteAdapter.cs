@@ -20,12 +20,9 @@ public interface IByteContainer
 {
     public byte[] Bytes
         => new[] { (byte)DataType }
-            .Concat(BitConverter.GetBytes(Header.Length))
-            .Concat(Header)
             .Concat(DataType < DataType.Object ? ArraySegment<byte>.Empty : BitConverter.GetBytes(BodyBytes.Count()))
             .Concat(BodyBytes)
             .ToArray();
-    public byte[] Header => Array.Empty<byte>();
     public DataType DataType => DataType.Object;
     public IEnumerable<byte> BodyBytes => BitConverter.GetBytes(Members.Count).Concat(Members.SelectMany(x => x.Bytes));
     public List<IByteContainer> Members => new();
@@ -66,8 +63,6 @@ public interface IByteContainer
         var dataType = (DataType)stream.ReadByte();
         if (dataType < DataType.Object)
             return stream.ReadContainer(dataType);
-        var headLen = stream.Read<int>();
-        var headData = stream.Read(headLen);
         var bodyLen = stream.Read<int>();
         var memberCount = stream.Read<int>();
         obj ??= (IByteContainer)type.GetConstructor(BindingFlags.Public, Type.EmptyTypes)?.Invoke(null)!;
@@ -130,7 +125,6 @@ public interface IByteContainer
     public abstract class Abstract : IByteContainer
     {
         public DataType DataType { get; }
-        public virtual byte[] Header { get; } = Array.Empty<byte>();
         public List<IByteContainer> Members { get; } = new();
         public virtual IEnumerable<byte> BodyBytes => Members.SelectMany(x => x.Bytes);
 
