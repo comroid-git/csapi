@@ -10,6 +10,22 @@ using System.Text;
 
 namespace comroid.csapi.common;
 
+public class BinaryStream : Stream
+{
+    public override void Flush() { throw new NotImplementedException(); }
+    public override int Read(byte[] buffer, int offset, int count) { throw new NotImplementedException(); }
+    public T Read<T>(int len) { throw new NotImplementedException(); }
+    public override long Seek(long offset, SeekOrigin origin) { throw new NotImplementedException(); }
+    public override void SetLength(long value) { throw new NotImplementedException(); }
+    public override void Write(byte[] buffer, int offset, int count) { throw new NotImplementedException(); }
+
+    public override bool CanRead { get; }
+    public override bool CanSeek { get; }
+    public override bool CanWrite { get; }
+    public override long Length { get; }
+    public override long Position { get; set; }
+}
+
 public interface IStringCache : IByteContainer
 {
     public int this[string str] { get; }
@@ -18,6 +34,7 @@ public interface IStringCache : IByteContainer
 
 public interface IByteContainer
 {
+    public Version Version { get; }
     public byte[] Bytes
         => new[] { (byte)DataType }
             .Concat(DataType < DataType.Object ? ArraySegment<byte>.Empty : BitConverter.GetBytes(BodyBytes.Count()))
@@ -91,17 +108,19 @@ public interface IByteContainer
     {
         if (!stream.CanWrite)
             throw new ArgumentException("Cannot write to stream", nameof(stream));
+
+        var type = GetType();
         
         stream.Write(Bytes);
-        
-        var type = GetType();
+        stream.Write(Const(AttributeHash(type)).Bytes);
         foreach (var (prop, attr) in FindAttributes(type))
         {
             var obj = prop.GetValue(this);
             try
             {
                 var it = obj as IByteContainer;
-                if (obj is IEnumerable && obj.GetType().GenericTypeArguments[0].IsAssignableTo(typeof(IByteContainer)))
+                if (obj is IEnumerable && (obj.GetType().GenericTypeArguments.FirstOrDefault()
+                        ?.IsAssignableTo(typeof(IByteContainer)) ?? false))
                     it = Concat(((IEnumerable<IByteContainer>)obj).ToArray());
                 else if (it == null)
                     it = Const(obj, strings, encoding);
@@ -114,6 +133,9 @@ public interface IByteContainer
         }
         stream.Flush();
     }
+
+    private static int AttributeHash(Type type) => string
+        .Join(";", FindAttributes(type).Select(x => x.prop.PropertyType.FullName + ':' + x.prop.Name)).GetHashCode();
 
     protected static IEnumerable<(PropertyInfo prop, ByteDataAttribute attr)> FindAttributes(Type type) =>
         type.GetProperties()
