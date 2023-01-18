@@ -24,8 +24,7 @@ public interface IByteContainer
             .Concat(BodyBytes)
             .ToArray();
     public DataType DataType => DataType.Object;
-    public IEnumerable<byte> BodyBytes => BitConverter.GetBytes(Members.Count).Concat(Members.SelectMany(x => x.Bytes));
-    public List<IByteContainer> Members => new();
+    public IEnumerable<byte> BodyBytes { get; }
 
     public static IByteContainer Empty() => new Constant();
     public static IByteContainer Concat(params IByteContainer[] arr) => new Concatenated(arr);
