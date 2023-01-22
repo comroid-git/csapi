@@ -1,8 +1,39 @@
 ﻿using System;
+using System.CodeDom.Compiler;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
+using System.Text;
 
 namespace comroid.csapi.common;
+
+public class DebugWriter : TextWriter
+{
+    public override Encoding Encoding => Encoding.ASCII;
+
+    public override void Write(char[] buffer, int index, int count)
+        => Debug.Write(new string(buffer)[index..(index + count)]);
+}
+
+public class MultiWriter : TextWriter
+{
+    public readonly HashSet<TextWriter> Writers;
+
+    public MultiWriter(params TextWriter[] writers)
+    {
+        Writers = writers.ToHashSet();
+    }
+
+    public override Encoding Encoding => Writers.Select(x => x.Encoding).First();
+
+    public override void Write(char[] buffer, int index, int count)
+    {
+        foreach (var writer in Writers) 
+            writer.Write(buffer, index, count);
+    }
+}
 
 public interface ILog
 {
@@ -24,8 +55,6 @@ public interface ILog
         AnsiUtil.Init();
     }
 
-    public static Log BaseLogger => Log.BaseLogger;
-
     Type Type { get; }
     string Name { get; }
     bool FullNames { get; set; }
@@ -37,7 +66,8 @@ public interface ILog
 
 public class Log : ILog
 {
-    public static readonly Log BaseLogger = new();
+    public static readonly Log Root = new();
+    public static readonly Log Debug = new(typeof(Debug)) { Writer = new DebugWriter() };
     private readonly ILog? _parent;
     private bool? _fullNames;
     private LogLevel? _level;
@@ -52,7 +82,7 @@ public class Log : ILog
     {
     }
 
-    public Log(Type type, string? name = null) : this(ILog.BaseLogger, type, name)
+    public Log(Type type, string? name = null) : this(Root, type, name)
     {
     }
 
@@ -274,7 +304,7 @@ public class Log : ILog
 
 public class Log<T> : Log where T : class
 {
-    public Log(Type type) : base(ILog.BaseLogger, type, null)
+    public Log(Type type) : base(Root, type, null)
     {
     }
 
