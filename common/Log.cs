@@ -6,7 +6,6 @@ namespace comroid.csapi.common;
 
 public interface ILog
 {
-    private protected const string DEFAULT_ERROR_MESSAGE = "Unhandled internal Exception";
     private protected static readonly ConcurrentDictionary<Type, ILog> cache;
     private protected static readonly TextTable writerAdapter;
     private protected static readonly TextTable.Column colTime;
@@ -157,24 +156,26 @@ public class Log : ILog
         return printException ?? exceptionLevel <= LogLevel.Error ? "\r\n" + e : string.Empty;
     }
 
-    public Func<Exception, object?> ExceptionLogger(object message,
+    public Func<Exception, object?> ExceptionLogger(object? message = null,
         LogLevel exceptionLevel = LogLevel.Fatal, Func<object, object?>? fallback = null,
         bool? printException = null)
     {
-        return e => At(exceptionLevel, message + _PE(e, exceptionLevel, printException), fallback);
+        return e => At(exceptionLevel,
+            (message ?? $"{e.GetType().Name}: {e.Message}") + _PE(e, exceptionLevel, printException), fallback);
     }
 
-    public Func<Exception, R?> ExceptionLogger<R>(object message,
+    public Func<Exception, R?> ExceptionLogger<R>(object? message = null,
         LogLevel exceptionLevel = LogLevel.Fatal, Func<object, R?>? fallback = null,
         bool? printException = null)
     {
-        return e => At(exceptionLevel, message + _PE(e, exceptionLevel, printException), fallback);
+        return e => At(exceptionLevel,
+            (message ?? $"{e.GetType().Name}: {e.Message}") + _PE(e, exceptionLevel, printException), fallback);
     }
 
     #region Callable Wrapping
 
     public Action WrapWithExceptionLogger(Action action,
-        string message = ILog.DEFAULT_ERROR_MESSAGE,
+        string? message = null,
         LogLevel exceptionLevel = LogLevel.Fatal,
         bool? printException = null)
     {
@@ -191,7 +192,7 @@ public class Log : ILog
         };
     }
     public Action<T> WrapWithExceptionLogger<T>(Action<T> action,
-        string message = ILog.DEFAULT_ERROR_MESSAGE,
+        string? message = null,
         LogLevel exceptionLevel = LogLevel.Fatal,
         bool? printException = null)
     {
@@ -208,7 +209,7 @@ public class Log : ILog
         };
     }
 
-    public Func<object?> WrapWithExceptionLogger(Func<object?> action, string message = ILog.DEFAULT_ERROR_MESSAGE,
+    public Func<object?> WrapWithExceptionLogger(Func<object?> action, string? message = null,
         LogLevel exceptionLevel = LogLevel.Fatal,
         Func<object, object?>? fallback = null,
         bool? printException = null)
@@ -226,7 +227,7 @@ public class Log : ILog
         };
     }
 
-    public Func<R?> WrapWithExceptionLogger<R>(Func<R?> action, string message = ILog.DEFAULT_ERROR_MESSAGE,
+    public Func<R?> WrapWithExceptionLogger<R>(Func<R?> action, string? message = null,
         LogLevel exceptionLevel = LogLevel.Fatal,
         Func<object, R?>? fallback = null,
         bool? printException = null)
@@ -244,14 +245,14 @@ public class Log : ILog
         };
     }
 
-    public void RunWithExceptionLogger(Action action, string message = ILog.DEFAULT_ERROR_MESSAGE,
+    public void RunWithExceptionLogger(Action action, string? message = null,
         LogLevel exceptionLevel = LogLevel.Fatal,
         bool? printException = null)
     {
         WrapWithExceptionLogger(action, message, exceptionLevel, printException)();
     }
 
-    public object? RunWithExceptionLogger(Func<object?> action, string message = ILog.DEFAULT_ERROR_MESSAGE,
+    public object? RunWithExceptionLogger(Func<object?> action, string? message = null,
         Func<object, object?>? fallback = null,
         LogLevel exceptionLevel = LogLevel.Fatal,
         bool? printException = null)
@@ -259,7 +260,7 @@ public class Log : ILog
         return WrapWithExceptionLogger(action, message, exceptionLevel, fallback, printException)();
     }
 
-    public R? RunWithExceptionLogger<R>(Func<R?> action, string message = ILog.DEFAULT_ERROR_MESSAGE,
+    public R? RunWithExceptionLogger<R>(Func<R?> action, string? message = null,
         Func<object, R?>? fallback = null,
         LogLevel exceptionLevel = LogLevel.Fatal,
         bool? printException = null)
