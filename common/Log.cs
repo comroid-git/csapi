@@ -103,7 +103,7 @@ public class Log : ILog
 
     public bool FullNames
     {
-        get => _fullNames ?? _parent?.FullNames ?? true;
+        get => _fullNames ?? _parent?.FullNames ?? false;
         set => _fullNames = value;
     }
 
@@ -166,7 +166,7 @@ public class Log : ILog
         if (useAnsi)
             str += level switch
             {
-                LogLevel.Trace => AnsiUtil.BrightBlue,
+                LogLevel.Trace => AnsiUtil.BrightMagenta,
                 LogLevel.Debug => AnsiUtil.BrightGreen,
                 LogLevel.Config => AnsiUtil.Blue,
                 LogLevel.Info => AnsiUtil.Green,
