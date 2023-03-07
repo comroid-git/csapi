@@ -5,9 +5,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
-using comroid.common;
 
-namespace comroid.csapi.common;
+namespace comroid.common;
 
 public class ConfigBase : IEnumerable<KeyValuePair<string, object?>>
 {
