@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 
-namespace comroid.csapi.common
+namespace comroid.common
 {
     public static class DebugUtil
     {

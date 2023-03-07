@@ -1,7 +1,7 @@
 using System;
 using System.Text.RegularExpressions;
 
-namespace comroid.csapi.common;
+namespace comroid.common;
 
 public class WildcardVersion : IComparable, IComparable<Version?>, IEquatable<Version?>
 {

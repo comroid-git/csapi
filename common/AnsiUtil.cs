@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using comroid.common;
 
 namespace comroid.csapi.common
     // ReSharper disable once ArrangeNamespaceBody

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace comroid.csapi.common;
+namespace comroid.common;
 
 public class Container : HashSet<IDisposable>, IDisposable
 {

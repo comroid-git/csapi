@@ -3,8 +3,8 @@
     <PropertyGroup>
         <ImplicitUsings>disable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <AssemblyName>comroid.csapi.common</AssemblyName>
-        <RootNamespace>comroid.csapi.common</RootNamespace>
+        <AssemblyName>comroid.common</AssemblyName>
+        <RootNamespace>comroid.common</RootNamespace>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Version>0.1.0</Version>
         <Title>Common C# Utilities</Title>

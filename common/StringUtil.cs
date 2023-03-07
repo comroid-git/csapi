@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Microsoft.VisualBasic.CompilerServices;
+using comroid.csapi.common;
 
-namespace comroid.csapi.common;
+namespace comroid.common;
 
 // ReSharper disable once ArrangeNamespaceBody
 

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace comroid.csapi.common;
+namespace comroid.common;
 
 
 public static class Extensions

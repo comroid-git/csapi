@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace comroid.csapi.common;
+namespace comroid.common;
 
 public static class ReflectionUtil
 {

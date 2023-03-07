@@ -6,6 +6,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "common.test", "common.test\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "testapp", "testapp\testapp.csproj", "{E4D742D9-A9BE-491A-84A6-41E5DCE7477D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "textUI", "textUI\textUI.csproj", "{1B6DD789-1DAF-4E48-A35B-EEA69F764BC2}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "textUI", "textUI", "{2363E98D-2F14-4463-A00D-CB4FC49FF26D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "textUI.discord", "textUI.discord\textUI.discord.csproj", "{EC2C7F77-0F14-471B-848E-E65BF488E75F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +30,17 @@ Global
 		{E4D742D9-A9BE-491A-84A6-41E5DCE7477D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E4D742D9-A9BE-491A-84A6-41E5DCE7477D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E4D742D9-A9BE-491A-84A6-41E5DCE7477D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B6DD789-1DAF-4E48-A35B-EEA69F764BC2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B6DD789-1DAF-4E48-A35B-EEA69F764BC2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B6DD789-1DAF-4E48-A35B-EEA69F764BC2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B6DD789-1DAF-4E48-A35B-EEA69F764BC2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EC2C7F77-0F14-471B-848E-E65BF488E75F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EC2C7F77-0F14-471B-848E-E65BF488E75F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EC2C7F77-0F14-471B-848E-E65BF488E75F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EC2C7F77-0F14-471B-848E-E65BF488E75F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{1B6DD789-1DAF-4E48-A35B-EEA69F764BC2} = {2363E98D-2F14-4463-A00D-CB4FC49FF26D}
+		{EC2C7F77-0F14-471B-848E-E65BF488E75F} = {2363E98D-2F14-4463-A00D-CB4FC49FF26D}
 	EndGlobalSection
 EndGlobal

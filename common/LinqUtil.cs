@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace comroid.csapi.common;
+namespace comroid.common;
 
 public static class LinqUtil
 {
