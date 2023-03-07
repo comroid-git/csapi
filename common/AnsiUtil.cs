@@ -1,10 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text.RegularExpressions;
-using comroid.common;
 
-namespace comroid.csapi.common
+namespace comroid.common
     // ReSharper disable once ArrangeNamespaceBody
 {
 // https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html
