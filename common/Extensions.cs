@@ -9,6 +9,27 @@ namespace comroid.csapi.common;
 
 public static class Extensions
 {
+    public static int CopyTo(this DirectoryInfo source, string targetPath)
+    {
+        var sourcePath = source.FullName;
+        var c = 0;
+        
+        //https://stackoverflow.com/a/3822913
+        //Now Create all of the directories
+        foreach (string dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories))
+        {
+            Directory.CreateDirectory(dirPath.Replace(sourcePath, targetPath));
+        }
+
+        //Copy all the files & Replaces any files with the same name
+        foreach (string newPath in Directory.GetFiles(sourcePath, "*.*",SearchOption.AllDirectories))
+        {
+            File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
+            c += 1;
+        }
+
+        return c;
+    }
     
     public static int Redirect(this Stream input, Stream output, int bufferSize = 64)
     {
