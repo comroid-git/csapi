@@ -7,7 +7,10 @@ public class ConsoleUIModule : UIModule
     public override Task<string?> WaitForInputAsync(Guid? _, object? message = null)
     {
         Console.Write(PreProcessMessage(message) + "> ");
-        return new Task<string?>(Console.ReadLine);
+        var txt = Console.ReadLine();
+        var task = new TaskCompletionSource<string?>();
+        task.SetResult(txt);
+        return task.Task;
     }
 
     public override void WriteOutput(Guid? _, object message)
