@@ -14,7 +14,12 @@ public static class LinqUtil
         for (var i = 0; i < count; i++)
             indices.Add(i);
         var rng = new Random();
-        while (indices.Count > 0) 
-            yield return array[indices[rng.Next(indices.Count)]];
+        while (indices.Count > 0)
+        {
+            var indexIndex = rng.Next(indices.Count);
+            var index = indices[indexIndex];
+            indices.RemoveAt(indexIndex);
+            yield return array[index];
+        }
     }
 }
