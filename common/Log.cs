@@ -333,11 +333,13 @@ public class Log<T> : Log where T : class
 
 public enum LogLevel : byte
 {
-    Trace = 255,
-    Debug = 212,
-    Config = 170,
-    Info = 127,
-    Warning = 85,
+    None = 0,
+    Fatal = 1,
     Error = 42,
-    Fatal = 0
+    Warning = 85,
+    Info = 127,
+    Config = 170,
+    Debug = 212,
+    Trace = 254,
+    All = 255
 }
