@@ -2,14 +2,16 @@
 
 public class ConsoleUIModule : UIModule
 {
-    public override string? WaitForInput(Guid? _, string? message = null)
+    public override UICapability Capabilities => base.Capabilities | UICapability.AnsiColorizable | UICapability.Unicode;
+
+    public override Task<string?> WaitForInputAsync(Guid? _, object? message = null)
     {
-        Console.Write(message + "> ");
-        return Console.ReadLine();
+        Console.Write(PreProcessMessage(message) + "> ");
+        return new Task<string?>(Console.ReadLine);
     }
 
     public override void WriteOutput(Guid? _, object message)
     {
-        Console.WriteLine(message);
+        Console.WriteLine(PreProcessMessage(message));
     }
 }

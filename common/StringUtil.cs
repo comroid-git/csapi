@@ -41,14 +41,14 @@ public static class StringUtil
 
     public static string StripExtension(this string str, string ext) => str.Substring(0, str.IndexOf(ext));
 
-    private static readonly Regex pattern = new("[^\\r]\\n", RegexOptions.Multiline | RegexOptions.CultureInvariant);
-    public static string Cleanup(this string str, bool keepNewlines = false, bool keepAnsi = false, bool keepWhitespaces = false)
+    private static readonly Regex NewLinePattern = new("[^\\r]\\n", RegexOptions.Multiline | RegexOptions.CultureInvariant);
+    public static string Cleanup(this string str, bool replaceLfWithCrlf = false, bool keepAnsi = false, bool trimWhitespaces = false)
     {
-        if (!keepNewlines) while (pattern.IsMatch(str))
-            str = pattern.Replace(str, "\r\n");
+        if (!replaceLfWithCrlf) while (NewLinePattern.IsMatch(str))
+            str = NewLinePattern.Replace(str, "\r\n");
         if (!keepAnsi) while (str.ContainsAnsi())
             str = str.RemoveAnsi();
-        if (!keepWhitespaces)
+        if (trimWhitespaces)
             return str.Trim();
         return str;
     }
@@ -107,7 +107,7 @@ public class TextTable
                              .Where(row => !row.Separator)
                              .Select(row => row._data[col])))
             {
-                var len = data.ToString()!.Cleanup(keepWhitespaces: true).Length;
+                var len = data.ToString()!.Cleanup(trimWhitespaces: true).Length;
                 if (lens[i] < len)
                     lens[i] = len;
             }

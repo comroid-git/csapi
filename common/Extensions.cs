@@ -3,17 +3,23 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace comroid.common;
 
 
 public static class Extensions
 {
+    public static bool CanCast<T>(this object it) => it.CanCast(typeof(T));
+    public static bool CanCast(this object it, Type type) => type.IsInstanceOfType(it);
+    public static T? CastOrDefault<T>(this object it) => it.CanCast<T>() ? (T)it : (T?)(object?)null;
+    public static T Cast<T>(this object it) => (T)it;
+
     public static int CopyTo(this DirectoryInfo source, string targetPath)
     {
         var sourcePath = source.FullName;
         var c = 0;
-        
+
         //https://stackoverflow.com/a/3822913
         //Now Create all of the directories
         foreach (string dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories))
@@ -22,7 +28,7 @@ public static class Extensions
         }
 
         //Copy all the files & Replaces any files with the same name
-        foreach (string newPath in Directory.GetFiles(sourcePath, "*.*",SearchOption.AllDirectories))
+        foreach (string newPath in Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories))
         {
             File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
             c += 1;
@@ -30,7 +36,7 @@ public static class Extensions
 
         return c;
     }
-    
+
     public static int Redirect(this Stream input, Stream output, int bufferSize = 64)
     {
         int r, c = 0;
@@ -40,9 +46,10 @@ public static class Extensions
             output.Write(buf, 0, r);
             c += r;
         }
+
         return c;
     }
-    
+
     public static void UpdateMd5(this FileSystemInfo path, Func<FileSystemInfo, string> md5path)
     {
         var md5 = md5path(path);
@@ -64,7 +71,7 @@ public static class Extensions
 
         var md5 = MD5.Create();
 
-        for(int i = 0; i < files.Length; i++)
+        for (int i = 0; i < files.Length; i++)
         {
             var file = files[i];
 
@@ -81,6 +88,14 @@ public static class Extensions
         }
 
         return BitConverter.ToString(md5.Hash).Replace("-", "").ToLower();
+    }
+
+    public static T Await<T>(this Task<T> task)
+    {
+        task.Wait();
+        if (task.Exception != null)
+            throw task.Exception;
+        return task.Result;
     }
 }
 
