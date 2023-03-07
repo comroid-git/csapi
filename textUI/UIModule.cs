@@ -58,5 +58,5 @@ public abstract class UIModule
     protected virtual string PreProcessMessage(object? message) => message?.ToString()
         ?.Cleanup(!HasCapabilities(UICapability.LF) | HasCapabilities(UICapability.CRLF),
             !HasCapabilities(UICapability.AnsiColorizable, UICapability.AnsiScrollable),
-            HasCapabilities(UICapability.TrimWhitespace)) ?? "no message";
+            HasCapabilities(UICapability.TrimWhitespace)) ?? string.Empty;
 }
