@@ -9,7 +9,7 @@ namespace comroid.gamelib;
 
 public abstract class GameBase : GameObject
 {
-    private readonly RenderWindow Window;
+    public readonly RenderWindow Window;
     public Color Background { get; set; } = Color.Black;
     protected readonly Text FrameInfo;
     protected readonly Circle Crosshair;
@@ -32,10 +32,8 @@ public abstract class GameBase : GameObject
 
     public override bool Update()
     {
-        // debug code
-        Crosshair.Position = Input.MousePosition.To3() - Vector3.One * Crosshair.Radius;
-
         FrameInfo.Value = $"Frame: {frameTime:0.###}ms\n Tick: {tickTime:0.###}ms\n  UPS: {(int)(1000 / (frameTime + tickTime))}";
+        Crosshair.Position = Input.MousePosition.To3(float.MaxValue);
         var success = false;
         tickTime = (float)DebugUtil.Measure(() => success = base.Update()) / 1000;
         return success;

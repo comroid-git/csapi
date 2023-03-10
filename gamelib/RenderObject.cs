@@ -24,7 +24,7 @@ public abstract class RenderObjectBase<TDelegate> : GameObjectComponent, IRender
         UpdateDelegateTransformData_Rotation();
     }
     
-    protected virtual void UpdateDelegateTransformData_Position() => Delegate.Position = AbsolutePosition.To2f(); 
+    protected virtual void UpdateDelegateTransformData_Position() => Delegate.Position = (AbsolutePosition - AbsoluteScale / 2).To2f(); 
     protected virtual void UpdateDelegateTransformData_Scale() => Delegate.Scale = AbsoluteScale.To2f(); 
     protected virtual void UpdateDelegateTransformData_Rotation() => Delegate.Rotation = AbsoluteRotation.Euler().Z; 
 
@@ -37,7 +37,21 @@ public abstract class RenderObjectBase<TDelegate> : GameObjectComponent, IRender
     }
 }
 
-public class Circle : RenderObjectBase<CircleShape>
+public class ShapeBase<TDelegate> : RenderObjectBase<TDelegate> where TDelegate : Shape
+{
+    public Color Color
+    {
+        get => Delegate.FillColor;
+        set => Delegate.FillColor = value;
+    }
+
+    public ShapeBase(TDelegate @delegate, IGameObject gameObject, ITransform transform = null!)
+        : base(@delegate, gameObject, transform)
+    {
+    }
+}
+
+public class Circle : ShapeBase<CircleShape>
 {
     public float Radius
     {
@@ -50,6 +64,8 @@ public class Circle : RenderObjectBase<CircleShape>
     {
         Add(new Collider(GameObject, this));
     }
+    
+    protected override void UpdateDelegateTransformData_Position() => Delegate.Position = (AbsolutePosition - Vector3.One * Radius).To2f(); 
     
     private class Collider : GameObjectComponent, ICollider
     {
@@ -65,7 +81,7 @@ public class Circle : RenderObjectBase<CircleShape>
     }
 }
 
-public class Rect : RenderObjectBase<RectangleShape>
+public class Rect : ShapeBase<RectangleShape>
 {
     public Rect(IGameObject gameObject, ITransform transform = null!)
         : base(new RectangleShape(new Vector2f(1,1)), gameObject, transform)
@@ -78,23 +94,24 @@ public class Rect : RenderObjectBase<RectangleShape>
         Delegate.Size = AbsoluteScale.To2f();
     }
 
-    public class Collider : GameObjectComponent, ICollider
+    private class Collider : GameObjectComponent, ICollider
     {
-        private readonly Rect _rect;
-
         public Collider(IGameObject gameObject, Rect rect) : base(gameObject, rect)
         {
-            _rect = rect;
         }
 
         // this method brought to you by ChatGPT
         public bool IsPointInside(Vector2 point)
         {
+            // Calculate the half width and half height of the rectangle
+            var halfWidth = AbsoluteScale.X / 2f;
+            var halfHeight = AbsoluteScale.Y / 2f;
+
             // Calculate the left, right, top, and bottom edges of the rectangle
-            var left = AbsolutePosition.X;
-            var right = AbsolutePosition.X + AbsoluteScale.X;
-            var top = AbsolutePosition.Y;
-            var bottom = AbsolutePosition.Y + AbsoluteScale.Y;
+            var left = AbsolutePosition.X - halfWidth;
+            var right = AbsolutePosition.X + halfWidth;
+            var top = AbsolutePosition.Y - halfHeight;
+            var bottom = AbsolutePosition.Y + halfHeight;
 
             // Check if the point is inside the rectangle
             return point.X > left && point.X < right && point.Y > top && point.Y < bottom;
@@ -103,16 +120,21 @@ public class Rect : RenderObjectBase<RectangleShape>
         // this method brought to you by ChatGPT
         public bool IsPointInside(Vector3 point)
         {
-            // Calculate the left, right, top, bottom, front, and back planes of the cuboid
-            var left = AbsolutePosition.X;
-            var right = AbsolutePosition.X + AbsoluteScale.X;
-            var top = AbsolutePosition.Y;
-            var bottom = AbsolutePosition.Y + AbsoluteScale.Y;
-            var front = AbsolutePosition.Z;
-            var back = AbsolutePosition.Z + AbsoluteScale.Z;
+            // Calculate the half width, half height, and half depth of the prism
+            var halfWidth = AbsoluteScale.X / 2f;
+            var halfHeight = AbsoluteScale.Y / 2f;
+            var halfDepth = AbsoluteScale.Z / 2f;
 
-            // Check if the point is inside the cuboid
-            return point.X > left && point.X < right && point.Y > top && point.Y < bottom && point.Z > back && point.Z < front;
+            // Calculate the left, right, top, bottom, front, and back planes of the prism
+            var left = AbsolutePosition.X - halfWidth;
+            var right = AbsolutePosition.X + halfWidth;
+            var top = AbsolutePosition.Y + halfHeight;
+            var bottom = AbsolutePosition.Y - halfHeight;
+            var front = AbsolutePosition.Z + halfDepth;
+            var back = AbsolutePosition.Z - halfDepth;
+
+            // Check if the point is inside the prism
+            return point.X > left && point.X < right && point.Y > bottom && point.Y < top && point.Z > back && point.Z < front;
         }
     }
 }
@@ -136,6 +158,11 @@ public class Text : RenderObjectBase<SFML.Graphics.Text>
     {
         get => Delegate.CharacterSize;
         set => Delegate.CharacterSize = value;
+    }
+    public Color FontColor
+    {
+        get => Delegate.FillColor;
+        set => Delegate.FillColor = value;
     }
 
     public Text(IGameObject gameObject, ITransform transform = null!)
