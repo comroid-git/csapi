@@ -43,9 +43,8 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
         
         if (!(Load() && Enable()))
             Log<GameComponent>.At(LogLevel.Fatal, $"Could not initialize {this} [{Loaded}/{Enabled}]");
-        
         // ReSharper disable once EmptyEmbeddedStatement
-        while (Tick());
+        else while (Tick());
     }
 
     public override void Dispose()
