@@ -4,15 +4,16 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <AssemblyName>comroid.gamelib</AssemblyName>
+        <RootNamespace>comroid.gamelib</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\gamelib\gamelib.csproj" />
-      <ProjectReference Include="..\textUI\textUI.csproj" />
+      <ProjectReference Include="..\common\common.csproj" />
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="SFML.Graphics" Version="2.5.0" />
+      <PackageReference Include="SFML.Net" Version="2.5.0" />
     </ItemGroup>
 
 </Project>

@@ -22,4 +22,17 @@ public static class LinqUtil
             yield return array[index];
         }
     }
+
+    public static IEnumerable<R?> CastOrDefault<T, R>(this IEnumerable<T?> input, Func<R?> fallback = null!)
+    {
+        fallback ??= () => default;
+        foreach (var it in input)
+            yield return (R?)(object?)it ?? fallback();
+    }
+
+    public static IEnumerable<R> CastOrSkip<T, R>(this IEnumerable<T> input)
+    {
+        foreach (var it in input)
+            if (it is R) yield return (R)(object)it;
+    }
 }

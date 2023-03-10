@@ -3,11 +3,15 @@ using System.Collections.Generic;
 
 namespace comroid.common;
 
-public class Container : HashSet<IDisposable>, IDisposable
+public class Container<T> : HashSet<T>, IDisposable where T : IDisposable
 {
-    public void Dispose()
+    public virtual void Dispose()
     {
-        foreach (var disposable in this) 
+        foreach (var disposable in this)
             disposable.Dispose();
     }
+}
+
+public class Container : Container<IDisposable>
+{
 }
