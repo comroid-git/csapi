@@ -18,7 +18,7 @@ public class Hoverable : GameObjectComponent
         return base.Enable();
     }
 
-    public override bool Tick()
+    public override bool EarlyUpdate()
     {
         var pre = Hovering;
         Hovering = _target.FindChildren<ICollider>().Any(it => it.IsPointInside(Input.MousePosition));
@@ -28,6 +28,6 @@ public class Hoverable : GameObjectComponent
             (true, false) => HoverEnd,
             _ => null
         })?.Invoke(_target);
-        return base.Tick();
+        return base.EarlyUpdate();
     }
 }

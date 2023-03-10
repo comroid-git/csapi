@@ -19,9 +19,11 @@ public interface IEnableable
     bool Disable();
 }
 
-public interface ITickable
+public interface IUpdatable
 {
-    bool Tick();
+    bool EarlyUpdate();
+    bool Update();
+    bool LateUpdate();
 }
 
 public interface IDrawable
@@ -40,7 +42,7 @@ public interface ITransform
     Quaternion AbsoluteRotation => Rotation;
 }
 
-public interface IGameComponent : ITransform, ILoadable, IEnableable, ITickable, IDisposable, IDrawable, ISet<IGameComponent>
+public interface IGameComponent : ITransform, ILoadable, IEnableable, IUpdatable, IDisposable, IDrawable, ISet<IGameComponent>
 {
     ITransform Transform { get; }
 

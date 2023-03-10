@@ -1,6 +1,8 @@
 ﻿using System.Numerics;
+using System.Runtime.InteropServices.ComTypes;
 using comroid.common;
 using SFML.Graphics;
+using SFML.System;
 using SFML.Window;
 
 namespace comroid.gamelib;
@@ -17,21 +19,32 @@ public abstract class GameBase : GameObject
     {
         this.Window = window ?? new RenderWindow(VideoMode.DesktopMode, GetType().Name);
         Window.Closed += (_, _) => Window.Close();
+        Window.Resized += (_, e) =>
+        {
+            var size = new Vector2f(e.Width, e.Height);
+            Window.SetView(new View(size / 2, size));
+        };
         Input.CreateHandlers(Window);
         
         Add(FrameInfo = new(this) { FontSize = 12 });
         Add(Crosshair = new(this) { Radius = 5 });
     }
 
-    public override bool Tick()
+    public override bool Update()
     {
         // debug code
         Crosshair.Position = Input.MousePosition.To3() - Vector3.One * Crosshair.Radius;
 
         FrameInfo.Value = $"Frame: {frameTime:0.###}ms\n Tick: {tickTime:0.###}ms\n  UPS: {(int)(1000 / (frameTime + tickTime))}";
         var success = false;
-        tickTime = (float)DebugUtil.Measure(() => success = base.Tick()) / 1000;
+        tickTime = (float)DebugUtil.Measure(() => success = base.Update()) / 1000;
         return success;
+    }
+
+    public override bool LateUpdate()
+    {
+        Input.LateUpdate();
+        return base.LateUpdate();
     }
 
     public void Run()
@@ -43,7 +56,7 @@ public abstract class GameBase : GameObject
             Log<GameBase>.At(LogLevel.Fatal, $"Could not initialize {this} [{Loaded}/{Enabled}]");
         // ReSharper disable once EmptyEmbeddedStatement
         else
-            while (Window.IsOpen && Tick())
+            while (Window.IsOpen && EarlyUpdate() && Update() && LateUpdate())
             {
                 Window.DispatchEvents();
                 
