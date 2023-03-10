@@ -8,7 +8,7 @@ public static class Extensions
     public static Vector2f To2f(this Vector3 it) => new(it.X, it.Y);
     
     // this method brought to you by ChatGPT
-    public static Vector3 EulerAngles(this Quaternion q)
+    public static Vector3 Euler(this Quaternion q)
     {
         // Store the Euler angles in radians
         float heading, attitude, bank;

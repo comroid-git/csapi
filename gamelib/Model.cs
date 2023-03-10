@@ -40,16 +40,16 @@ public interface ITransform
     Quaternion AbsoluteRotation => Rotation;
 }
 
-public interface IGameComponent : ITransform, ILoadable, IEnableable, ITickable, IDisposable, ISet<IGameComponent>
+public interface IGameComponent : ITransform, ILoadable, IEnableable, ITickable, IDisposable, IDrawable, ISet<IGameComponent>
 {
     ITransform Transform { get; }
 }
 
-public interface IGameObject : IGameComponent, IDrawable
+public interface IGameObject : IGameComponent
 {
 }
 
-public interface IRenderObject : IGameComponent, IDrawable
+public interface IRenderObject : IGameComponent
 {
     IGameObject GameObject { get; }
 }
