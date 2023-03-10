@@ -42,6 +42,10 @@ public interface ITransform
     Quaternion AbsoluteRotation => Rotation;
 }
 
+public interface ICamera : ITransform
+{
+}
+
 public interface IGameComponent : ITransform, ILoadable, IEnableable, IUpdatable, IDisposable, IDrawable, ISet<IGameComponent>
 {
     ITransform Transform { get; }

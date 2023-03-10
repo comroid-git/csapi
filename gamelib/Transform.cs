@@ -2,7 +2,7 @@
 
 namespace comroid.gamelib;
 
-public struct Singularity : ITransform
+public class Singularity : ITransform
 {
     public static readonly Vector3 DefaultPosition = Vector3.Zero;
     public static readonly Vector3 DefaultScale = Vector3.One;

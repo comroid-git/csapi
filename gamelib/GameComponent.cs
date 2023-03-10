@@ -23,7 +23,7 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
     }
 
     private bool Everything(Func<IGameComponent, bool> func)
-        => this.OrderBy(it => -it.Position.Z).CastOrSkip<IDisposable, IGameComponent>().All(func); 
+        => this.OrderBy(it => it.Position.Z).CastOrSkip<IDisposable, IGameComponent>().All(func); 
     public virtual bool Load() => Everything(x => x.Loaded || x.Load()) && !Loaded && (Loaded = true);
     public virtual bool Enable() => Everything(x => x.Enabled || x.Enable()) && !Enabled && (Enabled = true);
     public virtual bool EarlyUpdate() => Everything(x => x.EarlyUpdate()) || true /* always tick */;

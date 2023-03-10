@@ -83,6 +83,14 @@ public class Circle : ShapeBase<CircleShape>
 
 public class Rect : ShapeBase<RectangleShape>
 {
+    /*
+    public Vector2f Size
+    {
+        get => Delegate.Size;
+        set => Delegate.Size = value;
+    }
+    */
+
     public Rect(IGameObject gameObject, ITransform transform = null!)
         : base(new RectangleShape(new Vector2f(1,1)), gameObject, transform)
     {

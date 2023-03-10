@@ -6,7 +6,6 @@ namespace comroid.common;
 
 // ReSharper disable once ArrangeNamespaceBody
 
-
 // https://www.lihaoyi.com/post/BuildyourownCommandLinewithANSIescapecodes.html
 public static class AnsiUtil
 {

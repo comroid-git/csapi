@@ -36,17 +36,38 @@ public sealed class KeyState
 
 public static class Input
 {
+    private static GameBase game = null!;
+    private static RenderWindow window = null!;
     private static readonly ConcurrentDictionary<Keyboard.Key, KeyState> Key = new();
     private static readonly ConcurrentDictionary<Mouse.Button, KeyState> MouseButton = new();
     public static Vector2 MousePosition { get; private set; }
+    private static Vector2 MousePositionOffset => (window.GetView().Size / 2).To2();
     //public static float MouseWheelDelta { get; private set; }
 
     public static KeyState GetKey(Keyboard.Key key) => Key.GetOrAdd(key, k => new KeyState(k.ToString(), false, false));
     public static KeyState GetKey(Mouse.Button btn) => MouseButton.GetOrAdd(btn, b => new KeyState(b.ToString(), false, false));
 
-    public static void CreateHandlers(RenderWindow win)
+    public static void Initialize(GameBase game, RenderWindow win)
     {
-        win.MouseMoved += (_, e) => MousePosition = new Vector2(e.X, e.Y);
+        void SetMousePos(float x, float y) => MousePosition = new Vector2(x, y) - MousePositionOffset + game.Camera.Position.To2();
+        
+        Input.game = game;
+        window = win;
+        win.MouseMoved += (_, e) => SetMousePos(e.X, e.Y);
+        win.MouseButtonPressed += (_, e) =>
+        {
+            SetMousePos(e.X, e.Y);
+            if (!MouseButton.ContainsKey(e.Button))
+                MouseButton[e.Button] = new KeyState(e.Button.ToString(), false, false);
+            MouseButton[e.Button].Press();
+        };
+        win.MouseButtonReleased += (_, e) =>
+        {
+            SetMousePos(e.X, e.Y);
+            if (!MouseButton.ContainsKey(e.Button))
+                MouseButton[e.Button] = new KeyState(e.Button.ToString(), false, false);
+            MouseButton[e.Button].Release();
+        };
         win.KeyPressed += (_, e) =>
         {
             if (!Key.ContainsKey(e.Code))
@@ -58,18 +79,6 @@ public static class Input
             if (!Key.ContainsKey(e.Code))
                 Key[e.Code] = new KeyState(e.Code.ToString(), false, false);
             Key[e.Code].Release();
-        };
-        win.MouseButtonPressed += (_, e) =>
-        {
-            if (!MouseButton.ContainsKey(e.Button))
-                MouseButton[e.Button] = new KeyState(e.Button.ToString(), false, false);
-            MouseButton[e.Button].Press();
-        };
-        win.MouseButtonReleased += (_, e) =>
-        {
-            if (!MouseButton.ContainsKey(e.Button))
-                MouseButton[e.Button] = new KeyState(e.Button.ToString(), false, false);
-            MouseButton[e.Button].Release();
         };
     }
 
