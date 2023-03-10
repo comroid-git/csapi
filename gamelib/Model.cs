@@ -54,11 +54,11 @@ public interface IGameObject : IGameComponent
 
 public interface IGameObjectComponent : IGameComponent
 {
+    IGameObject GameObject { get; }
 }
 
 public interface IRenderObject : IGameObjectComponent
 {
-    IGameObject GameObject { get; }
 }
 
 public interface ICollider : IGameObjectComponent

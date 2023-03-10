@@ -2,30 +2,32 @@
 
 public class Hoverable : GameObjectComponent
 {
+    private readonly IGameObjectComponent _target;
     public bool Hovering { get; private set; }
-    public event Action<IGameObject>? HoverBegin;
-    public event Action<IGameObject>? HoverEnd;
+    public event Action<IGameObjectComponent>? HoverBegin;
+    public event Action<IGameObjectComponent>? HoverEnd;
     
-    public Hoverable(IGameObject gameObject, ITransform transform = null!) : base(gameObject, transform)
+    public Hoverable(IGameObjectComponent target, ITransform transform = null!) : base(target.GameObject, transform)
     {
+        _target = target;
     }
 
     public override bool Enable()
     {
-        HoverEnd?.Invoke(GameObject);
+        HoverEnd?.Invoke(_target);
         return base.Enable();
     }
 
     public override bool Tick()
     {
         var pre = Hovering;
-        Hovering = GameObject.FindChildren<ICollider>().Any(it => it.IsPointInside(Input.MousePosition));
+        Hovering = _target.FindChildren<ICollider>().Any(it => it.IsPointInside(Input.MousePosition));
         ((pre, Hovering) switch
         {
             (false, true) => HoverBegin,
             (true, false) => HoverEnd,
             _ => null
-        })?.Invoke(GameObject);
+        })?.Invoke(_target);
         return base.Tick();
     }
 }
