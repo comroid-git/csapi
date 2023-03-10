@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using SFML.Graphics;
 
 namespace comroid.gamelib;
 
@@ -25,7 +26,7 @@ public interface ITickable
 
 public interface IDrawable
 {
-    void Draw();
+    void Draw(RenderWindow win);
 }
 
 public interface ITransform
@@ -33,6 +34,10 @@ public interface ITransform
     Vector3 Position { get; set; }
     Vector3 Scale { get; set; }
     Quaternion Rotation { get; set; }
+
+    Vector3 AbsolutePosition => Position;
+    Vector3 AbsoluteScale => Scale;
+    Quaternion AbsoluteRotation => Rotation;
 }
 
 public interface IGameComponent : ITransform, ILoadable, IEnableable, ITickable, IDisposable, ISet<IGameComponent>
@@ -42,7 +47,6 @@ public interface IGameComponent : ITransform, ILoadable, IEnableable, ITickable,
 
 public interface IGameObject : IGameComponent, IDrawable
 {
-    protected ISet<IRenderObject> RenderObjects { get; }
 }
 
 public interface IRenderObject : IGameComponent, IDrawable

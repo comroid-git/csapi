@@ -9,8 +9,16 @@ using comroid.common;
 
 namespace comroid.common;
 
-// ReSharper disable once ArrangeNamespaceBody
-
+public enum CapitalizationCase : byte
+{
+    Normal = 0x00,
+    lowercase = 0x01,
+    UPPERCASE = 0x02,
+    CamelCase = 0x04,
+    lowerCamelCase = 0x08,
+    snake_case = 0x10 | lowercase,
+    UPPER_SNAKE_CASE = 0x20 | UPPERCASE
+}
 
 public static class StringUtil
 {
