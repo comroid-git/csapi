@@ -39,7 +39,7 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
     public void Run()
     {
         // call Dispose() after method ends
-        using var x = this;
+        using var _ = this;
         
         if (!(Load() && Enable()))
             Log<GameComponent>.At(LogLevel.Fatal, $"Could not initialize {this} [{Loaded}/{Enabled}]");
