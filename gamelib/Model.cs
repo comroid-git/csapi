@@ -43,13 +43,26 @@ public interface ITransform
 public interface IGameComponent : ITransform, ILoadable, IEnableable, ITickable, IDisposable, IDrawable, ISet<IGameComponent>
 {
     ITransform Transform { get; }
+
+    R? FindChild<R>();
+    IEnumerable<R> FindChildren<R>();
 }
 
 public interface IGameObject : IGameComponent
 {
 }
 
-public interface IRenderObject : IGameComponent
+public interface IGameObjectComponent : IGameComponent
+{
+}
+
+public interface IRenderObject : IGameObjectComponent
 {
     IGameObject GameObject { get; }
+}
+
+public interface ICollider : IGameObjectComponent
+{
+    bool IsPointInside(Vector2 p);
+    bool IsPointInside(Vector3 p);
 }

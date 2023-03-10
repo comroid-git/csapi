@@ -1,4 +1,5 @@
-﻿using comroid.common;
+﻿using System.Numerics;
+using comroid.common;
 using SFML.Graphics;
 using SFML.Window;
 
@@ -6,29 +7,35 @@ namespace comroid.gamelib;
 
 public abstract class GameBase : GameObject
 {
+    private readonly RenderWindow Window;
     public Color Background { get; set; } = Color.Black;
     protected readonly Text FrameInfo;
+    protected readonly Circle Crosshair;
     private float frameTime, tickTime;
 
-    protected GameBase() : base(Singularity.Default())
+    protected GameBase(RenderWindow window = null!) : base(Singularity.Default())
     {
+        this.Window = window ?? new RenderWindow(VideoMode.DesktopMode, GetType().Name);
+        Window.Closed += (_, _) => Window.Close();
+        Input.CreateHandlers(Window);
+        
         Add(FrameInfo = new(this) { FontSize = 12 });
+        Add(Crosshair = new(this) { Radius = 5 });
     }
 
     public override bool Tick()
     {
+        // debug code
+        Crosshair.Position = Input.MousePosition.To3() - Vector3.One * Crosshair.Radius;
+
         FrameInfo.Value = $"Frame: {frameTime:0.###}ms\n Tick: {tickTime:0.###}ms\n  UPS: {(int)(1000 / (frameTime + tickTime))}";
         var success = false;
         tickTime = (float)DebugUtil.Measure(() => success = base.Tick()) / 1000;
         return success;
     }
 
-    public void Run(RenderWindow win = null!)
+    public void Run()
     {
-        win ??= new RenderWindow(VideoMode.DesktopMode, GetType().Name);
-
-        win.Closed += (_, _) => win.Close();
-
         // register for calling this.Dispose() after method ends
         using var _ = this;
 
@@ -36,18 +43,18 @@ public abstract class GameBase : GameObject
             Log<GameBase>.At(LogLevel.Fatal, $"Could not initialize {this} [{Loaded}/{Enabled}]");
         // ReSharper disable once EmptyEmbeddedStatement
         else
-            while (win.IsOpen && Tick())
+            while (Window.IsOpen && Tick())
             {
-                win.DispatchEvents();
+                Window.DispatchEvents();
                 
-                win.Clear(Background);
+                Window.Clear(Background);
                 frameTime = (float)DebugUtil.Measure(() =>
                 {
-                    Draw(win);
-                    win.Display();
+                    Draw(Window);
+                    Window.Display();
                 }) / 1000;
             }
         
-        win.Close();
+        Window.Close();
     }
 }
