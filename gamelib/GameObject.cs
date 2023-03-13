@@ -2,7 +2,7 @@
 
 public class GameObject : GameComponent, IGameObject
 {
-    public GameObject(ITransform? transform = null) : base(transform)
+    public GameObject(GameBase game, ITransform? transform = null) : base(game, transform)
     {
     }
 }

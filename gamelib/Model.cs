@@ -48,6 +48,7 @@ public interface ICamera : ITransform
 
 public interface IGameComponent : ITransform, ILoadable, IEnableable, IUpdatable, IDisposable, IDrawable, ISet<IGameComponent>
 {
+    GameBase Game { get; }
     ITransform Transform { get; }
 
     R? FindComponent<R>();

@@ -11,6 +11,7 @@ public static class Extensions
     public static Vector3 To3(this Vector2f it, float z = 0) => new(it.X, it.Y, z);
     public static Vector3 To3(this Vector2i it, float z = 0) => new(it.X, it.Y, z);
     public static Vector3 To3(this Vector2u it, float z = 0) => new(it.X, it.Y, z);
+    public static Vector2f To2f(this Vector2 it) => new(it.X, it.Y);
     public static Vector2f To2f(this Vector3 it) => new(it.X, it.Y);
     
     // this method brought to you by ChatGPT

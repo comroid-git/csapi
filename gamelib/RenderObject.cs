@@ -51,7 +51,7 @@ public class ShapeBase<TDelegate> : RenderObjectBase<TDelegate> where TDelegate 
     }
 }
 
-public class Circle : ShapeBase<CircleShape>
+public partial class Circle : ShapeBase<CircleShape>
 {
     public float Radius
     {
@@ -65,23 +65,10 @@ public class Circle : ShapeBase<CircleShape>
         Add(new Collider(GameObject, this));
     }
 
-    protected override Vector2f GetDelegateTransformData_Position() => (AbsolutePosition - Vector3.One * Radius).To2f(); 
-    
-    private class Collider : GameObjectComponent, ICollider
-    {
-        private readonly Circle _circle;
-
-        public Collider(IGameObject gameObject, Circle circle) : base(gameObject, circle)
-        {
-            _circle = circle;
-        }
-
-        public bool IsPointInside(Vector2 p) => Vector2.Distance(AbsolutePosition.To2(), p) < _circle.Radius;
-        public bool IsPointInside(Vector3 p) => Vector3.Distance(AbsolutePosition, p) < _circle.Radius;
-    }
+    protected override Vector2f GetDelegateTransformData_Position() => (AbsolutePosition - Vector3.One * Radius).To2f();
 }
 
-public class Rect : ShapeBase<RectangleShape>
+public partial class Rect : ShapeBase<RectangleShape>
 {
     public Vector2f Size
     {
@@ -95,49 +82,7 @@ public class Rect : ShapeBase<RectangleShape>
         Add(new Collider(GameObject, this));
     }
 
-    private class Collider : GameObjectComponent, ICollider
-    {
-        public Collider(IGameObject gameObject, Rect rect) : base(gameObject, rect)
-        {
-        }
-
-        // this method brought to you by ChatGPT
-        public bool IsPointInside(Vector2 point)
-        {
-            // Calculate the half width and half height of the rectangle
-            var halfWidth = AbsoluteScale.X / 2f;
-            var halfHeight = AbsoluteScale.Y / 2f;
-
-            // Calculate the left, right, top, and bottom edges of the rectangle
-            var left = AbsolutePosition.X - halfWidth;
-            var right = AbsolutePosition.X + halfWidth;
-            var top = AbsolutePosition.Y - halfHeight;
-            var bottom = AbsolutePosition.Y + halfHeight;
-
-            // Check if the point is inside the rectangle
-            return point.X > left && point.X < right && point.Y > top && point.Y < bottom;
-        }
-
-        // this method brought to you by ChatGPT
-        public bool IsPointInside(Vector3 point)
-        {
-            // Calculate the half width, half height, and half depth of the prism
-            var halfWidth = AbsoluteScale.X / 2f;
-            var halfHeight = AbsoluteScale.Y / 2f;
-            var halfDepth = AbsoluteScale.Z / 2f;
-
-            // Calculate the left, right, top, bottom, front, and back planes of the prism
-            var left = AbsolutePosition.X - halfWidth;
-            var right = AbsolutePosition.X + halfWidth;
-            var top = AbsolutePosition.Y + halfHeight;
-            var bottom = AbsolutePosition.Y - halfHeight;
-            var front = AbsolutePosition.Z + halfDepth;
-            var back = AbsolutePosition.Z - halfDepth;
-
-            // Check if the point is inside the prism
-            return point.X > left && point.X < right && point.Y > bottom && point.Y < top && point.Z > back && point.Z < front;
-        }
-    }
+    protected override Vector2f GetDelegateTransformData_Position() => AbsolutePosition.To2f() - Size / 2;
 }
 
 public class Text : RenderObjectBase<SFML.Graphics.Text>

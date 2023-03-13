@@ -36,12 +36,17 @@ public sealed class KeyState
 
 public static class Input
 {
+    private static object Lock = new();
     private static GameBase game = null!;
     private static RenderWindow window = null!;
     private static readonly ConcurrentDictionary<Keyboard.Key, KeyState> Key = new();
-    private static readonly ConcurrentDictionary<Mouse.Button, KeyState> MouseButton = new();
+    internal static readonly ConcurrentDictionary<Mouse.Button, KeyState> MouseButton = new();
     public static Vector2 MousePosition { get; private set; }
-    private static Vector2 MousePositionOffset => (window.GetView().Size / 2).To2();
+    public static Vector2 MouseDelta { get; private set; }
+    public static float MouseDeltaTime { get; private set; }
+    private static float MouseSetTime { get; set; }
+
+    private static Vector2 MousePositionOffset => (window.GetView().Size / 2).To2() + game.Camera.Position.To2();
     //public static float MouseWheelDelta { get; private set; }
 
     public static KeyState GetKey(Keyboard.Key key) => Key.GetOrAdd(key, k => new KeyState(k.ToString(), false, false));
@@ -49,8 +54,17 @@ public static class Input
 
     public static void Initialize(GameBase game, RenderWindow win)
     {
-        void SetMousePos(float x, float y) => MousePosition = new Vector2(x, y) - MousePositionOffset + game.Camera.Position.To2();
-        
+        void SetMousePos(float x, float y)
+        {
+            lock (Lock)
+            {
+                MouseDelta = MousePosition - (MousePosition = new Vector2(x, y) - MousePositionOffset);
+                MouseDeltaTime = (MouseSetTime - DebugUtil.UnixTime()) / 1000;
+                MouseSetTime = DebugUtil.UnixTime();
+                // todo: fixme using multithreading
+            }
+        }
+
         Input.game = game;
         window = win;
         win.MouseMoved += (_, e) => SetMousePos(e.X, e.Y);
@@ -86,5 +100,8 @@ public static class Input
     {
         foreach (var state in Key.Values.Concat(MouseButton.Values)) 
             state.Push();
+        lock (Lock)
+        {
+        }
     }
 }

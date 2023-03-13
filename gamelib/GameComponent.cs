@@ -6,6 +6,7 @@ namespace comroid.gamelib;
 
 public abstract class GameComponent : Container<IGameComponent>, IGameComponent
 {
+    public virtual GameBase Game { get; }
     public ITransform Transform { get; }
     public bool Loaded { get; private set; }
     public bool Enabled { get; private set; }
@@ -17,8 +18,9 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
     public Vector3 AbsoluteScale => Transform.AbsoluteScale * Scale;
     public Quaternion AbsoluteRotation => Transform.AbsoluteRotation * Rotation;
 
-    protected GameComponent(ITransform? transform = null)
+    protected GameComponent(GameBase game, ITransform? transform = null)
     {
+        Game = game;
         Transform = transform ?? Singularity.Default();
     }
 
@@ -57,7 +59,7 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
         if (!(Disable() && Unload()))
             Log<GameComponent>.At(LogLevel.Warning, $"Could not dispose {this} [{Loaded}/{Enabled}]");
     }
-    
+
     public R? FindComponent<R>() => FindComponents<R>().FirstOrDefault();
     public IEnumerable<R> FindComponents<R>() => this.CastOrSkip<IGameComponent, R>()
         .Concat(this.SelectMany(x => x.FindComponents<R>()));
