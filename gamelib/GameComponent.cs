@@ -17,7 +17,7 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
     public Vector3 AbsoluteScale => Transform.AbsoluteScale * Scale;
     public Quaternion AbsoluteRotation => Transform.AbsoluteRotation * Rotation;
 
-    protected GameComponent(ITransform transform = null!)
+    protected GameComponent(ITransform? transform = null)
     {
         Transform = transform ?? Singularity.Default();
     }
