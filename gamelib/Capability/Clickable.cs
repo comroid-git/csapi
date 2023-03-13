@@ -15,10 +15,13 @@ public class Clickable : GameObjectComponent
 
     public override bool EarlyUpdate()
     {
-        var state = Input.GetKey(Mouse.Button.Left);
-        Clicking = state && _target.FindComponents<ICollider>().Any(it => it.IsPointInside(Input.MousePosition));
-        if (state.Pressed)
-            Click?.Invoke(_target);
+        if (Click != null)
+        {
+            var state = Input.GetKey(Mouse.Button.Left);
+            Clicking = state && _target.FindComponents<ICollider>().Any(it => it.IsPointInside(Input.MousePosition));
+            if (state.Pressed)
+                Click(_target);
+        }
         return base.EarlyUpdate();
     }
 }

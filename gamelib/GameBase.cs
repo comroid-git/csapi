@@ -13,6 +13,7 @@ public abstract class GameBase : GameObject
     public readonly WindowCamera MainCamera;
     public ICamera Camera { get; set; }
     public Color Background { get; set; } = Color.Black;
+    public float DeltaTime { get; private set; }
 #if DEBUG
     protected readonly Text FrameInfo;
     protected readonly Circle Crosshair;
@@ -58,6 +59,7 @@ public abstract class GameBase : GameObject
         
         var success = false;
         tickTime = (float)DebugUtil.Measure(() => success = base.Update()) / 1000;
+        DeltaTime = tickTime + frameTime;
         return success;
     }
 

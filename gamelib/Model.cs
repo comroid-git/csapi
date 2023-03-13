@@ -70,6 +70,9 @@ public interface IRenderObject : IGameObjectComponent
 
 public interface ICollider : IGameObjectComponent
 {
+    bool CollidesWith2D(ICollider other);
+    IEnumerable<Vector2> GetBoundary2D();
+
     bool IsPointInside(Vector2 p);
     bool IsPointInside(Vector3 p);
 }

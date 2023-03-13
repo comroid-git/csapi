@@ -61,21 +61,20 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
             Log<GameComponent>.At(LogLevel.Warning, $"Could not dispose {this} [{Loaded}/{Enabled}]");
     }
 
-    public R? AddComponent<R>()
+    public R? Add<R>() where R : IGameComponent
     {
         try
         {
             var ctor = new[]
                 {
                     new[] { typeof(IGameObject) },
+                    new[] { typeof(IGameComponent) },
                     new[] { typeof(IGameObject), typeof(ITransform) },
                     new[] { typeof(IGameComponent), typeof(ITransform) },
-                    new[] { GetType() },
-                    new[] { GetType(), typeof(ITransform) },
-                    new[] { GetType(), typeof(ITransform) },
-                    new[] { typeof(GameObject), GetType() },
-                    new[] { typeof(GameComponent), GetType() },
-                }.Select(t =>
+                    new[] { typeof(IGameObject), GetType() },
+                    new[] { typeof(IGameComponent), GetType() },
+                }
+                .Select(t =>
                 {
                     try
                     {
@@ -86,10 +85,13 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
                         return null;
                     }
                 })
-                .FirstOrDefault();
-            return (R)ctor?.Invoke(parameters: ctor.GetParameters().Length == 2
-                ? new[] { this, this }
-                : new[] { this });
+                .FirstOrDefault(x => x != null);
+            var it = (R?)ctor?.Invoke(parameters: ctor.GetParameters().Length == 2
+                ? new object[] { this is not IGameObject && this is IGameObjectComponent c1 ? c1.GameObject : this, this }
+                : new object[] { this is not IGameObject && this is IGameObjectComponent c2 ? c2.GameObject : this });
+            if (it != null)
+                Add(it);
+            return it;
         }
         catch (Exception e)
         {

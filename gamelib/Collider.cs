@@ -2,9 +2,22 @@
 
 namespace comroid.gamelib;
 
+public abstract class ColliderBase : GameObjectComponent, ICollider
+{
+    protected ColliderBase(IGameObject gameObject, ITransform transform = null!) : base(gameObject, transform)
+    {
+    }
+
+    public bool CollidesWith2D(ICollider other) => other.GetBoundary2D().Any(IsPointInside);
+
+    public abstract IEnumerable<Vector2> GetBoundary2D();
+    public abstract bool IsPointInside(Vector2 p);
+    public abstract bool IsPointInside(Vector3 p);
+}
+
 public partial class Circle
 {
-    private class Collider : GameObjectComponent, ICollider
+    private class Collider : ColliderBase
     {
         private readonly Circle _circle;
 
@@ -13,14 +26,21 @@ public partial class Circle
             _circle = circle;
         }
 
-        public bool IsPointInside(Vector2 p) => Vector2.Distance(AbsolutePosition.To2(), p) < _circle.Radius;
-        public bool IsPointInside(Vector3 p) => Vector3.Distance(AbsolutePosition, p) < _circle.Radius;
+        public override IEnumerable<Vector2> GetBoundary2D()
+        {
+            for (var x = 0; x < 12; x++)
+                yield return AbsolutePosition.To2() + new Vector2(MathF.Sin(x / 12), MathF.Cos(x / 12)) * _circle.Radius;
+            yield return AbsolutePosition.To2();
+        }
+
+        public override bool IsPointInside(Vector2 p) => Vector2.Distance(AbsolutePosition.To2(), p) < _circle.Radius;
+        public override bool IsPointInside(Vector3 p) => Vector3.Distance(AbsolutePosition, p) < _circle.Radius;
     }
 }
 
 public partial class Rect
 {
-    public class Collider : GameObjectComponent, ICollider
+    public class Collider : ColliderBase
     {
         private readonly Rect _rect;
 
@@ -28,9 +48,14 @@ public partial class Rect
         {
             _rect = rect;
         }
+        
+        public override IEnumerable<Vector2> GetBoundary2D()
+        {
+            throw new NotImplementedException();
+        }
 
         // this method brought to you by ChatGPT
-        public bool IsPointInside(Vector2 point)
+        public override bool IsPointInside(Vector2 point)
         {
             // Calculate the half width and half height of the rectangle
             //var halfWidth = _rect.Size.X / 2f;
@@ -47,7 +72,7 @@ public partial class Rect
         }
 
         // this method brought to you by ChatGPT
-        public bool IsPointInside(Vector3 point)
+        public override bool IsPointInside(Vector3 point)
         {
             // Calculate the half width, half height, and half depth of the prism
             //var halfWidth = _rect.Size.X / 2f;
