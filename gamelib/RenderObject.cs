@@ -171,3 +171,17 @@ public class Text : RenderObjectBase<SFML.Graphics.Text>
     {
     }
 }
+
+public class Sprite : RenderObjectBase<SFML.Graphics.Sprite>
+{
+    public Texture Texture
+    {
+        get => Delegate.Texture;
+        set => Delegate.Texture = value;
+    }
+    
+    public Sprite(IGameObject gameObject, ITransform transform = null!)
+        : base(new SFML.Graphics.Sprite(), gameObject, transform)
+    {
+    }
+}
