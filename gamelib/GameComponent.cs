@@ -61,6 +61,42 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
             Log<GameComponent>.At(LogLevel.Warning, $"Could not dispose {this} [{Loaded}/{Enabled}]");
     }
 
+    public R? AddComponent<R>()
+    {
+        try
+        {
+            var ctor = new[]
+                {
+                    new[] { typeof(IGameObject) },
+                    new[] { typeof(IGameObject), typeof(ITransform) },
+                    new[] { typeof(IGameComponent), typeof(ITransform) },
+                    new[] { GetType() },
+                    new[] { GetType(), typeof(ITransform) },
+                    new[] { GetType(), typeof(ITransform) },
+                    new[] { typeof(GameObject), GetType() },
+                    new[] { typeof(GameComponent), GetType() },
+                }.Select(t =>
+                {
+                    try
+                    {
+                        return typeof(R).GetConstructor(t);
+                    }
+                    catch
+                    {
+                        return null;
+                    }
+                })
+                .FirstOrDefault();
+            return (R)ctor?.Invoke(parameters: ctor.GetParameters().Length == 2
+                ? new[] { this, this }
+                : new[] { this });
+        }
+        catch (Exception e)
+        {
+            Log<GameComponent>.At(LogLevel.Error, $"Could not instantiate Component of type {typeof(R)}\r\n{e}");
+            return (R?)(object?)null;
+        }
+    }
     public R? FindComponent<R>() => FindComponents<R>().FirstOrDefault();
     public IEnumerable<R> FindComponents<R>() => this.CastOrSkip<IGameComponent, R>()
         .Concat(this.SelectMany(x => x.FindComponents<R>()));
