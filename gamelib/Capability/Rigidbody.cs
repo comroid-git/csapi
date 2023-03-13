@@ -6,13 +6,14 @@ public class Rigidbody : GameObjectComponent
 {
     public float Friction { get; set; }
     public float Bounciness { get; set; }
-    private PhysicsEngine? physics => Game.FindComponent<PhysicsEngine>();
+    private readonly PhysicsEngine? physics;;
     public Vector3 Velocity { get; set; }
 
     public event Action<ICollider>? Collide;
 
     public Rigidbody(IGameObject gameObject, ITransform transform = null!) : base(gameObject, transform)
     {
+    this.physics = Game.FindComponent<PhysicsEngine>();
     }
 
     public override bool EarlyUpdate()
@@ -28,7 +29,7 @@ public class Rigidbody : GameObjectComponent
             Velocity = Vector3.Lerp(Velocity, physics.Gravity, grade);
         }
         // apply friction
-        Velocity *= 1 - Friction * Game.DeltaTime;
+        Velocity *= 1 - Friction * Math.Min(Game.DeltaTime, 1);
 
         // apply velocity
         Transform.Position += Velocity * Game.DeltaTime;
@@ -39,10 +40,19 @@ public class Rigidbody : GameObjectComponent
     public override bool LateUpdate()
     {
         if (Collide != null)
-            foreach (var colliding in Game.FindComponents<ICollider>()
-                         .Where(x => !FindComponents<ICollider>().Any(x.Equals))
-                         .Where(x => FindComponents<ICollider>().Any(x.CollidesWith2D)))
-                Collide(colliding);
+            foreach (var component in Game)
+            {
+                if (component is not ICollider outside)
+                    continue;
+                var own = FindComponents<ICollider>().ToArray();
+                foreach (var any in own)
+                {
+                    if (any == outside)
+                        break;
+                    if (any.CollidesWith2D(outside))
+                        Collide(outside);
+                }
+            }
         return base.LateUpdate();
     }
 }
