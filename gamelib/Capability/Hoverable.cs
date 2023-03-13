@@ -21,7 +21,7 @@ public class Hoverable : GameObjectComponent
     public override bool EarlyUpdate()
     {
         var pre = Hovering;
-        Hovering = _target.FindChildren<ICollider>().Any(it => it.IsPointInside(Input.MousePosition));
+        Hovering = _target.FindComponents<ICollider>().Any(it => it.IsPointInside(Input.MousePosition));
         ((pre, Hovering) switch
         {
             (false, true) => HoverBegin,

@@ -50,8 +50,8 @@ public interface IGameComponent : ITransform, ILoadable, IEnableable, IUpdatable
 {
     ITransform Transform { get; }
 
-    R? FindChild<R>();
-    IEnumerable<R> FindChildren<R>();
+    R? FindComponent<R>();
+    IEnumerable<R> FindComponents<R>();
 }
 
 public interface IGameObject : IGameComponent

@@ -58,7 +58,7 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
             Log<GameComponent>.At(LogLevel.Warning, $"Could not dispose {this} [{Loaded}/{Enabled}]");
     }
     
-    public R? FindChild<R>() => FindChildren<R>().FirstOrDefault();
-    public IEnumerable<R> FindChildren<R>() => this.CastOrSkip<IGameComponent, R>()
-        .Concat(this.SelectMany(x => x.FindChildren<R>()));
+    public R? FindComponent<R>() => FindComponents<R>().FirstOrDefault();
+    public IEnumerable<R> FindComponents<R>() => this.CastOrSkip<IGameComponent, R>()
+        .Concat(this.SelectMany(x => x.FindComponents<R>()));
 }
