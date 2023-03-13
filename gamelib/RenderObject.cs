@@ -62,7 +62,7 @@ public partial class Circle : ShapeBase<CircleShape>
     public Circle(IGameObject gameObject, ITransform transform = null!)
         : base(new CircleShape(), gameObject, transform)
     {
-        Add(new Collider(GameObject, this));
+        //Add(new Collider(GameObject, this));
     }
 
     protected override Vector2f GetDelegateTransformData_Position() => (AbsolutePosition - Vector3.One * Radius).To2f();
@@ -79,7 +79,7 @@ public partial class Rect : ShapeBase<RectangleShape>
     public Rect(IGameObject gameObject, ITransform transform = null!)
         : base(new RectangleShape(new Vector2f(1,1)), gameObject, transform)
     {
-        Add(new Collider(GameObject, this));
+        //Add(new Collider(GameObject, this));
     }
 
     protected override Vector2f GetDelegateTransformData_Position() => AbsolutePosition.To2f() - Size / 2;

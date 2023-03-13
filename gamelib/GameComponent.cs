@@ -1,6 +1,7 @@
 ﻿using System.Numerics;
 using comroid.common;
 using SFML.Graphics;
+using BindingFlags = System.Reflection.BindingFlags;
 
 namespace comroid.gamelib;
 
