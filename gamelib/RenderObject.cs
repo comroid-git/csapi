@@ -19,14 +19,14 @@ public abstract class RenderObjectBase<TDelegate> : GameObjectComponent, IRender
 
     protected virtual void UpdateDelegateTransformData()
     {
-        UpdateDelegateTransformData_Position();
-        UpdateDelegateTransformData_Scale();
-        UpdateDelegateTransformData_Rotation();
+        Delegate.Position = GetDelegateTransformData_Position();
+        Delegate.Scale = GetDelegateTransformData_Scale();
+        Delegate.Rotation = GetDelegateTransformData_Rotation();
     }
     
-    protected virtual void UpdateDelegateTransformData_Position() => Delegate.Position = (AbsolutePosition - AbsoluteScale / 2).To2f(); 
-    protected virtual void UpdateDelegateTransformData_Scale() => Delegate.Scale = AbsoluteScale.To2f(); 
-    protected virtual void UpdateDelegateTransformData_Rotation() => Delegate.Rotation = AbsoluteRotation.Euler().Z; 
+    protected virtual Vector2f GetDelegateTransformData_Position() => (AbsolutePosition - AbsoluteScale / 2).To2f(); 
+    protected virtual Vector2f GetDelegateTransformData_Scale() => AbsoluteScale.To2f(); 
+    protected virtual float GetDelegateTransformData_Rotation() => AbsoluteRotation.Euler().Z; 
 
     public override void Draw(RenderWindow win)
     {
@@ -64,8 +64,8 @@ public class Circle : ShapeBase<CircleShape>
     {
         Add(new Collider(GameObject, this));
     }
-    
-    protected override void UpdateDelegateTransformData_Position() => Delegate.Position = (AbsolutePosition - Vector3.One * Radius).To2f(); 
+
+    protected override Vector2f GetDelegateTransformData_Position() => (AbsolutePosition - Vector3.One * Radius).To2f(); 
     
     private class Collider : GameObjectComponent, ICollider
     {
@@ -83,23 +83,16 @@ public class Circle : ShapeBase<CircleShape>
 
 public class Rect : ShapeBase<RectangleShape>
 {
-    /*
     public Vector2f Size
     {
         get => Delegate.Size;
         set => Delegate.Size = value;
     }
-    */
 
     public Rect(IGameObject gameObject, ITransform transform = null!)
         : base(new RectangleShape(new Vector2f(1,1)), gameObject, transform)
     {
         Add(new Collider(GameObject, this));
-    }
-
-    protected override void UpdateDelegateTransformData_Scale()
-    {
-        Delegate.Size = AbsoluteScale.To2f();
     }
 
     private class Collider : GameObjectComponent, ICollider
