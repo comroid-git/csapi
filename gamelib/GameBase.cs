@@ -11,6 +11,7 @@ public abstract class GameBase : GameObject
     public override GameBase Game => this;
     public readonly RenderWindow Window;
     public readonly WindowCamera MainCamera;
+    protected readonly Thread UpdateThread;
     public ICamera Camera { get; set; }
     public Color Background { get; set; } = Color.Black;
     public float DeltaTime { get; private set; }
@@ -22,9 +23,9 @@ public abstract class GameBase : GameObject
 
     protected GameBase(RenderWindow window = null!) : base(null!, Singularity.Default())
     {
-
         this.Window = window ?? new RenderWindow(VideoMode.DesktopMode, GetType().Name);
         this.Camera = MainCamera = new WindowCamera(Window);
+        this.UpdateThread = new Thread(RunUpdate);
 
         Window.Closed += (_, _) => Window.Close();
         Window.Resized += (_, e) => SetView(Camera.Position, new Vector2f(e.Width, e.Height));
@@ -69,36 +70,52 @@ public abstract class GameBase : GameObject
         return base.LateUpdate();
     }
 
+    public override bool Unload()
+    {
+        Window.Close();
+        return base.Unload();
+    }
+
     public void Run()
     {
         // register for calling this.Dispose() after method ends
         using var _ = this;
+        UpdateThread.Start();
+        RunWindow();
+        UpdateThread.Join();
+    }
 
+    private void RunWindow()
+    {
         if (!(Load() && Enable()))
             Log<GameBase>.At(LogLevel.Fatal, $"Could not initialize {this} [{Loaded}/{Enabled}]");
         // ReSharper disable once EmptyEmbeddedStatement
         else
             while (Window.IsOpen)
             {
-                if (!EarlyUpdate())
-                    break;
-                
                 Window.DispatchEvents();
-                
-                if (!Update())
-                    break;
-                
                 Window.Clear(Background);
+                
                 frameTime = (float)DebugUtil.Measure(() =>
                 {
                     Draw(Window);
                     Window.Display();
                 }) / 1000;
-                
-                if (!LateUpdate())
-                    break;
             }
-        
+        Window.Close();
+    }
+
+    private void RunUpdate()
+    {
+        while (Window.IsOpen)
+        {
+            if (!EarlyUpdate())
+                break;
+            if (!Update())
+                break;
+            if (!LateUpdate())
+                break;
+        }
         Window.Close();
     }
 
