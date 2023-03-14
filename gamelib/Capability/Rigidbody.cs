@@ -6,7 +6,7 @@ public class Rigidbody : GameObjectComponent
 {
     public float Friction { get; set; }
     public float Bounciness { get; set; }
-    private readonly PhysicsEngine? physics;;
+    private readonly PhysicsEngine? physics;
     public Vector3 Velocity { get; set; }
 
     public event Action<ICollider>? Collide;
