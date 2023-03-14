@@ -141,7 +141,7 @@ public partial class Rect
 
         public override Vector3 CalculateCollisionOutputDirection(Collision collision, Vector3 velocity, float bounciness)
         {
-            return velocity;
+            throw new NotImplementedException();
         }
     }
 }
