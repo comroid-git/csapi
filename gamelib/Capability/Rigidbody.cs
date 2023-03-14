@@ -40,12 +40,11 @@ public class Rigidbody : GameObjectComponent
     public override bool LateUpdate()
     {
         if (Collide != null)
-            foreach (var component in Game)
+            foreach (var component in Game.AllComponents())
             {
                 if (component is not ICollider outside)
                     continue;
-                var own = FindComponents<ICollider>().ToArray();
-                foreach (var any in own)
+                foreach (var any in GameObject.FindComponents<ICollider>())
                 {
                     if (any == outside)
                         continue;
