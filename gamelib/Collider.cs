@@ -17,7 +17,7 @@ public abstract class ColliderBase : GameObjectComponent, ICollider
 
 public partial class Circle
 {
-    private class Collider : ColliderBase
+    public class Collider : ColliderBase
     {
         private readonly Circle _circle;
 
