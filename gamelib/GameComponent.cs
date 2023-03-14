@@ -77,7 +77,7 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
             var it = (R?)Activator.CreateInstance(typeof(R), this is not IGameObject && this is IGameObjectComponent c0 ? c0.GameObject : this, this);
             if (it != null)
             {
-                it.Name = name;
+                it.Name = name ?? typeof(R).Name;
                 Add(it);
             }
             return it;
