@@ -1,4 +1,5 @@
 ﻿using System.Numerics;
+using comroid.gamelib.Capability;
 
 namespace comroid.gamelib;
 
@@ -10,13 +11,16 @@ public abstract class ColliderBase : GameObjectComponent, ICollider
 
     public bool CollidesWith2D(ICollider other, out Vector2? point)
     {
-        point = other.GetBoundary2D().FirstOrDefault(IsPointInside);
+        point = other.GetBoundary2D().Where(IsPointInside)
+            .Cast<Vector2?>()
+            .FirstOrDefault(defaultValue: null);
         return point != null;
     }
 
     public abstract IEnumerable<Vector2> GetBoundary2D();
     public abstract bool IsPointInside(Vector2 p);
     public abstract bool IsPointInside(Vector3 p);
+    public abstract Vector3 CalculateCollisionOutputDirection(Collision collision, Vector3 velocity, float bounciness);
 }
 
 public partial class Circle
@@ -33,7 +37,7 @@ public partial class Circle
         public override IEnumerable<Vector2> GetBoundary2D()
         {
             const int segments = 12;
-            for (var i = 0; i < segments; i++)
+            for (var i = 1; i < segments; i++)
                 yield return AbsolutePosition.To2() +
                              new Vector2(MathF.Sin(2 * MathF.PI * i / segments),
                                  MathF.Cos(2 * MathF.PI * i / segments)) * _circle.Radius;
@@ -42,6 +46,36 @@ public partial class Circle
 
         public override bool IsPointInside(Vector2 p) => Vector2.Distance(AbsolutePosition.To2(), p) < _circle.Radius;
         public override bool IsPointInside(Vector3 p) => Vector3.Distance(AbsolutePosition, p) < _circle.Radius;
+        public override Vector3 CalculateCollisionOutputDirection(Collision collision, Vector3 velocity, float bounciness)
+        {
+            var velocityMagnitude = velocity.Length();
+            if (velocityMagnitude == 0)
+                return velocity;
+
+            var me = collision.Sender.AbsolutePosition;
+            var other = collision.CollidedWith.AbsolutePosition;
+            var at = collision.CollisionPosition;
+            var rel = other - me;
+        
+            // this part brought to you by ChatGPT
+// Get the cross product of A and B
+            Vector3 r = Vector3.Cross(me, at);
+
+// Get the magnitude of r
+            float rMagnitude = r.Length();
+
+// Get the angle between A and B
+            float theta = MathF.Acos(Vector3.Dot(Vector3.Normalize(velocity), Vector3.Normalize(rel)));
+
+// Calculate the quaternion
+            Quaternion rotation = new Quaternion(
+                MathF.Cos(theta),
+                MathF.Sin(theta) * (r.X / rMagnitude),
+                MathF.Sin(theta) * (r.Y / rMagnitude),
+                MathF.Sin(theta) * (r.Z / rMagnitude)
+            );
+            return Vector3.Transform(velocity, rotation) * bounciness;
+        }
     }
 }
 
@@ -103,6 +137,11 @@ public partial class Rect
 
             // Check if the point is inside the prism
             return point.X > left && point.X < right && point.Y > bottom && point.Y < top && point.Z > back && point.Z < front;
+        }
+
+        public override Vector3 CalculateCollisionOutputDirection(Collision collision, Vector3 velocity, float bounciness)
+        {
+            return velocity;
         }
     }
 }

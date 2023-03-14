@@ -7,6 +7,8 @@ namespace comroid.common;
 
 public static class DebugUtil
 {
+    public static readonly Random RNG = new();
+
     public static Dictionary<string, T?> GetConstantsOfClass<T>(Type of)
     {
         return of.GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)

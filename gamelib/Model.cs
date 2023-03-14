@@ -1,7 +1,13 @@
 ﻿using System.Numerics;
+using comroid.gamelib.Capability;
 using SFML.Graphics;
 
 namespace comroid.gamelib;
+
+public interface ICancellable
+{
+    bool Cancel();
+}
 
 public interface ILoadable
 {
@@ -57,7 +63,7 @@ public interface IGameComponent : ITransform, ILoadable, IEnableable, IUpdatable
     R? FindComponent<R>();
     IEnumerable<R> FindComponents<R>();
     IEnumerable<IGameComponent> AllComponents();
-    bool Destroy() => Game.Destroy(this);
+    bool Destroy();
 }
 
 public interface IGameObject : IGameComponent
@@ -80,4 +86,5 @@ public interface ICollider : IGameObjectComponent
 
     bool IsPointInside(Vector2 p);
     bool IsPointInside(Vector3 p);
+    Vector3 CalculateCollisionOutputDirection(Collision collision, Vector3 velocity, float bounciness);
 }

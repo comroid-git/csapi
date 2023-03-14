@@ -93,4 +93,5 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
         .Concat(this.SelectMany(x => x.FindComponents<R>()));
 
     public IEnumerable<IGameComponent> AllComponents() => this.Concat(this.SelectMany(x => x.AllComponents()));
+    public bool Destroy() => Game.Destroy(this);
 }

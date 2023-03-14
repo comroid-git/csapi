@@ -13,11 +13,7 @@ public static class Extensions
     public static bool CanCast<T>(this object it) => it.CanCast(typeof(T));
     public static bool CanCast(this object it, Type type) => type.IsInstanceOfType(it);
 
-    public static T As<T>(this object it) => Nullable.GetUnderlyingType(typeof(T)) != null
-        ? it.CanCast<T>()
-            ? (T)it
-            : (T)(object?)null!
-        : throw new InvalidCastException($"Cannot cast {it} to non-nullable type {typeof(T)}");
+    public static T? As<T>(this object it) => it.CanCast<T>()/**/ ? (T)it : (T?)(object?)null;//&& Nullable.GetUnderlyingType(typeof(T)) == null ? (T)it : Nullable.GetUnderlyingType(typeof(T)) != null ? (T)(object?)null! : throw new InvalidCastException($"Cannot cast {it} to non-nullable type {typeof(T)}");
 
     public static int CopyTo(this DirectoryInfo source, string targetPath)
     {
