@@ -51,6 +51,7 @@ public partial class Circle
             var velocityMagnitude = velocity.Length();
             if (velocityMagnitude == 0)
                 return velocity;
+            velocity = Vector3.Normalize(velocity);
 
             var me = collision.Sender.AbsolutePosition;
             var other = collision.CollidedWith.AbsolutePosition;
@@ -74,7 +75,7 @@ public partial class Circle
                 MathF.Sin(theta) * (r.Y / rMagnitude),
                 MathF.Sin(theta) * (r.Z / rMagnitude)
             );
-            return Vector3.Transform(velocity, rotation) * bounciness;
+            return Vector3.Transform(velocity, rotation) * bounciness * velocityMagnitude;
         }
     }
 }
