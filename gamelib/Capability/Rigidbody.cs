@@ -13,7 +13,7 @@ public class Rigidbody : GameObjectComponent
 
     public Rigidbody(IGameObject gameObject, ITransform transform = null!) : base(gameObject, transform)
     {
-    this.physics = Game.FindComponent<PhysicsEngine>();
+        this.physics = gameObject.Game.FindComponent<PhysicsEngine>();
     }
 
     public override bool EarlyUpdate()
@@ -48,7 +48,7 @@ public class Rigidbody : GameObjectComponent
                 foreach (var any in own)
                 {
                     if (any == outside)
-                        break;
+                        continue;
                     if (any.CollidesWith2D(outside))
                         Collide(outside);
                 }
