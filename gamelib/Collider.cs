@@ -90,15 +90,17 @@ public partial class Rect
         {
             _rect = rect;
         }
-        
+
         public override IEnumerable<Vector2> GetBoundary2D()
         {
+            var sizeX = _rect.Size.X;
+            var sizeY = _rect.Size.Y;
             var left = _rect.Delegate.Position.X;
-            var right = _rect.Delegate.Position.X + _rect.Size.X;
+            var right = _rect.Delegate.Position.X + sizeX;
             var top = _rect.Delegate.Position.Y;
-            var bottom = _rect.Delegate.Position.Y + _rect.Size.Y;
-            foreach (var h in new[]{left,right})
-            foreach (var v in new[]{top, bottom})
+            var bottom = _rect.Delegate.Position.Y + sizeY;
+            for (var h = left; h <= right; h += sizeX * (5 / sizeX))
+            for (var v = top; v <= bottom; v += sizeY * (5 / sizeY))
                 yield return new Vector2(h, v);
             yield return AbsolutePosition.To2();
         }
