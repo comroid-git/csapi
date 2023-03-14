@@ -8,7 +8,11 @@ public abstract class ColliderBase : GameObjectComponent, ICollider
     {
     }
 
-    public bool CollidesWith2D(ICollider other) => other.GetBoundary2D().Any(IsPointInside);
+    public bool CollidesWith2D(ICollider other, out Vector2? point)
+    {
+        point = other.GetBoundary2D().FirstOrDefault(IsPointInside);
+        return point != null;
+    }
 
     public abstract IEnumerable<Vector2> GetBoundary2D();
     public abstract bool IsPointInside(Vector2 p);
