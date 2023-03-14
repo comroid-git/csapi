@@ -25,17 +25,17 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
         Transform = transform ?? Singularity.Default();
     }
 
-    private bool Everything(Func<IGameComponent, bool> func, bool enabledOnly = false)
-        => this.OrderBy(it => it.Position.Z)
-            .CastOrSkip<IDisposable, IGameComponent>()
+    private bool RunOnAllComponents(Func<IGameComponent, bool> func, bool enabledOnly = false, bool ordered = false)
+        => ((IEnumerable<IGameComponent>)(ordered ? this.OrderBy(it => it.Position.Z) : this))
             .Where(x => !enabledOnly || x.Enabled)
+            .ToArray()
             .All(func); 
-    public virtual bool Load() => Everything(x => x.Loaded || x.Load()) && !Loaded && (Loaded = true);
-    public virtual bool Enable() => Everything(x => x.Enabled || x.Enable()) && !Enabled && (Enabled = true);
-    public virtual bool EarlyUpdate() => Everything(x => x.EarlyUpdate(), true) || true /* always tick */;
-    public virtual bool Update() => Everything(x => x.Update(), true) || true /* always tick */;
-    public virtual bool LateUpdate() => Everything(x => x.LateUpdate(), true) || true /* always tick */;
-    public virtual void Draw(RenderWindow win) => Everything(x =>
+    public virtual bool Load() => RunOnAllComponents(x => x.Loaded || x.Load()) && !Loaded && (Loaded = true);
+    public virtual bool Enable() => RunOnAllComponents(x => x.Enabled || x.Enable()) && !Enabled && (Enabled = true);
+    public virtual bool EarlyUpdate() => RunOnAllComponents(x => x.EarlyUpdate(), true) || true /* always tick */;
+    public virtual bool Update() => RunOnAllComponents(x => x.Update(), true) || true /* always tick */;
+    public virtual bool LateUpdate() => RunOnAllComponents(x => x.LateUpdate(), true) || true /* always tick */;
+    public virtual void Draw(RenderWindow win) => RunOnAllComponents(x =>
     {
         x.Draw(win);
         return true;
