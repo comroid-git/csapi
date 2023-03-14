@@ -8,6 +8,7 @@ namespace comroid.gamelib;
 
 public abstract class GameBase : GameObject
 {
+    protected readonly Log log;
     public override GameBase Game => this;
     public readonly RenderWindow Window;
     public readonly WindowCamera MainCamera;
@@ -23,6 +24,7 @@ public abstract class GameBase : GameObject
 
     protected GameBase(RenderWindow window = null!) : base(null!, Singularity.Default())
     {
+        this.log = new Log(GetType());
         this.Window = window ?? new RenderWindow(VideoMode.DesktopMode, GetType().Name);
         this.Camera = MainCamera = new WindowCamera(Window);
         this.UpdateThread = new Thread(RunUpdate);
@@ -102,22 +104,24 @@ public abstract class GameBase : GameObject
                     Window.Display();
                 }) / 1000;
             }
-        Window.Close();
     }
 
     private void RunUpdate()
     {
         while (Window.IsOpen)
         {
-            if (!EarlyUpdate())
-                break;
-            if (!Update())
-                break;
-            if (!LateUpdate())
-                break;
+            bool u1 = false, u2 = false;
+            if (!EarlyUpdate() || !(u1 = Update()) || !(u2 = LateUpdate()))
+                log.At(LogLevel.Error, $"Could not finish Update normally; stopped at {(u2 ? "LateUpdate" : u1 ? "Update" : "EarlyUpdate")}");
         }
-        Window.Close();
     }
 
     private void SetView(Vector3 camPos, Vector2f size) => Window.SetView(new View(camPos.To2f(), size));
+
+    public bool Destroy(IGameComponent gameComponent)
+    {
+        return gameComponent.Disable() 
+               && gameComponent.Unload() 
+               && (gameComponent.Parent?.Remove(gameComponent) ?? true);
+    }
 }

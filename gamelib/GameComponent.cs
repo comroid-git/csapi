@@ -1,12 +1,13 @@
 ﻿using System.Numerics;
 using comroid.common;
 using SFML.Graphics;
-using BindingFlags = System.Reflection.BindingFlags;
 
 namespace comroid.gamelib;
 
 public abstract class GameComponent : Container<IGameComponent>, IGameComponent
 {
+    public string Name { get; set; }
+    public IGameComponent? Parent { get; internal set; }
     public virtual GameBase Game { get; }
     public ITransform Transform { get; }
     public bool Loaded { get; private set; }
@@ -23,6 +24,7 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
     {
         Game = game;
         Transform = transform ?? Singularity.Default();
+        Name = GetType().Name;
     }
 
     private bool RunOnAllComponents(Func<IGameComponent, bool> func, bool enabledOnly = false, bool ordered = false)
@@ -39,14 +41,18 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
     {
         x.Draw(win);
         return true;
-    });
-    public virtual bool Disable() => Everything(x => !x.Enabled || x.Disable()) && Enabled && !(Enabled = false);
-    public virtual bool Unload() => Everything(x => !x.Loaded || x.Unload()) && Loaded && !(Loaded = false);
+    }, true, true);
+    public virtual bool Disable() => RunOnAllComponents(x => !x.Enabled || x.Disable()) && Enabled && !(Enabled = false);
+    public virtual bool Unload() => RunOnAllComponents(x => !x.Loaded || x.Unload()) && Loaded && !(Loaded = false);
 
     public new void Add(IGameComponent component)
     {
-        if ((component.Loaded || component.Load()) && component.Enable())
+        if ((component.Parent == null || component.Parent.Remove(component))
+            && (component.Loaded || component.Load()) && component.Enable())
+        {
             base.Add(component);
+            ((GameComponent)component).Parent = this;
+        }
         else Log<GameComponent>.At(LogLevel.Warning, $"Could not add {component} to {this} [{component.Loaded}]");
     }
 
@@ -64,36 +70,16 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
             Log<GameComponent>.At(LogLevel.Warning, $"Could not dispose {this} [{Loaded}/{Enabled}]");
     }
 
-    public R? Add<R>() where R : IGameComponent
+    public R? Add<R>(string? name = null) where R : IGameComponent
     {
         try
         {
-            var ctor = new[]
-                {
-                    new[] { typeof(IGameObject) },
-                    new[] { typeof(IGameComponent) },
-                    new[] { typeof(IGameObject), typeof(ITransform) },
-                    new[] { typeof(IGameComponent), typeof(ITransform) },
-                    new[] { typeof(IGameObject), GetType() },
-                    new[] { typeof(IGameComponent), GetType() },
-                }
-                .Select(t =>
-                {
-                    try
-                    {
-                        return typeof(R).GetConstructor(t);
-                    }
-                    catch
-                    {
-                        return null;
-                    }
-                })
-                .FirstOrDefault(x => x != null);
-            var it = (R?)ctor?.Invoke(parameters: ctor.GetParameters().Length == 2
-                ? new object[] { this is not IGameObject && this is IGameObjectComponent c1 ? c1.GameObject : this, this }
-                : new object[] { this is not IGameObject && this is IGameObjectComponent c2 ? c2.GameObject : this });
+            var it = (R?)Activator.CreateInstance(typeof(R), this is not IGameObject && this is IGameObjectComponent c0 ? c0.GameObject : this, this);
             if (it != null)
+            {
+                it.Name = name;
                 Add(it);
+            }
             return it;
         }
         catch (Exception e)
@@ -105,4 +91,6 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
     public R? FindComponent<R>() => FindComponents<R>().FirstOrDefault();
     public IEnumerable<R> FindComponents<R>() => this.CastOrSkip<IGameComponent, R>()
         .Concat(this.SelectMany(x => x.FindComponents<R>()));
+
+    public IEnumerable<IGameComponent> AllComponents() => this.Concat(this.SelectMany(x => x.AllComponents()));
 }

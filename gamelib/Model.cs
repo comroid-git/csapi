@@ -48,11 +48,16 @@ public interface ICamera : ITransform
 
 public interface IGameComponent : ITransform, ILoadable, IEnableable, IUpdatable, IDisposable, IDrawable, ISet<IGameComponent>
 {
+    string Name { get; set; }
+    IGameComponent? Parent { get; }
     GameBase Game { get; }
     ITransform Transform { get; }
-
+    
+    R? Add<R>(string? name = null) where R : IGameComponent;
     R? FindComponent<R>();
     IEnumerable<R> FindComponents<R>();
+    IEnumerable<IGameComponent> AllComponents();
+    bool Destroy() => Game.Destroy(this);
 }
 
 public interface IGameObject : IGameComponent

@@ -28,8 +28,11 @@ public partial class Circle
 
         public override IEnumerable<Vector2> GetBoundary2D()
         {
-            for (var x = 0; x < 12; x++)
-                yield return AbsolutePosition.To2() + new Vector2(MathF.Sin(x / 12), MathF.Cos(x / 12)) * _circle.Radius;
+            const int segments = 12;
+            for (var i = 0; i < segments; i++)
+                yield return AbsolutePosition.To2() +
+                             new Vector2(MathF.Sin(2 * MathF.PI * i / segments),
+                                 MathF.Cos(2 * MathF.PI * i / segments)) * _circle.Radius;
             yield return AbsolutePosition.To2();
         }
 
