@@ -46,7 +46,7 @@ public abstract class GameBase : GameObject
         
 #if DEBUG
         FrameInfo.Position = (view.Center - view.Size / 2).To3(float.MaxValue);
-        FrameInfo.Value = $"Frame: {frameTime:0.000}ms\n Tick: {tickTime:0.000}ms\n  UPS: {(int)(1000 / (frameTime + tickTime))}";
+        FrameInfo.Value = $"Frame: {frameTime:0.000}ms ({(int)(1000/frameTime)} FPS)\n Tick: {tickTime:0.000}ms ({(int)(1000 / tickTime)} TPS)";
         Crosshair.Position = Input.MousePosition.To3(float.MaxValue);
         if (Input.MouseButton.Values.Any(x => x.Down))
         {
