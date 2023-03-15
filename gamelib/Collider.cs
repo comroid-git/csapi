@@ -5,14 +5,27 @@ namespace comroid.gamelib;
 
 public abstract class ColliderBase : GameObjectComponent, ICollider
 {
+    public bool Inverse { get; set; }
+    
     protected ColliderBase(IGameObject gameObject, ITransform transform = null!) : base(gameObject, transform)
     {
     }
 
     public bool CollidesWith2D(ICollider other, out Vector2? point)
     {
-        point = other.GetBoundary2D().Where(IsPointInside)
-            .Cast<Vector2?>()
+        var inv = Inverse || other.Inverse;
+        point = (inv ? ArraySegment<(Vector2 p, ICollider vs)>.Empty : GetBoundary2D().Select(p => (p, vs: other)))
+            .Concat(other.GetBoundary2D().Select(p => (p, vs: (ICollider)this)))
+            .Where(any =>
+            {
+                if (inv)
+                    if (any.vs.IsPointInside(any.p))
+                        return true;
+                    else return false;
+                else
+                    return any.vs.IsPointInside(any.p);
+            })
+            .Select(x => (Vector2?)x.p)
             .FirstOrDefault(defaultValue: null);
         return point != null;
     }
