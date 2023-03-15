@@ -6,6 +6,14 @@ namespace comroid.gamelib;
 
 public abstract class GameComponent : Container<IGameComponent>, IGameComponent
 {
+    private Channel _channel;
+
+    public Channel Channel
+    {
+        get => _channel | (Parent?.Channel ?? default);
+        set => _channel = value;
+    }
+
     public string Name { get; set; }
     public IGameComponent? Parent { get; internal set; }
     public virtual GameBase Game { get; }
@@ -39,7 +47,8 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
     public virtual bool LateUpdate() => RunOnAllComponents(x => x.LateUpdate(), true) || true /* always tick */;
     public virtual void Draw(RenderWindow win) => RunOnAllComponents(x =>
     {
-        x.Draw(win);
+        if ((x.Channel & Channel.Hidden) == 0)
+            x.Draw(win);
         return true;
     }, true, true);
     public virtual bool Disable() => RunOnAllComponents(x => !x.Enabled || x.Disable()) && Enabled && !(Enabled = false);

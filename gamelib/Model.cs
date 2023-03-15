@@ -52,8 +52,27 @@ public interface ICamera : ITransform
 {
 }
 
+[Flags]
+public enum Channel : byte
+{
+    Default = default,
+    
+    // types
+    Player = 0x10,
+    Props = 0x20,
+    Board = 0x40,
+    Environment = 0x80,
+    
+    // attributes
+    Hidden = 0x01,
+    Res1 = 0x02,
+    Res2 = 0x04,
+    Res3 = 0x08,
+}
+
 public interface IGameComponent : ITransform, ILoadable, IEnableable, IUpdatable, IDisposable, IDrawable, ISet<IGameComponent>
 {
+    Channel Channel { get; set; }
     string Name { get; set; }
     IGameComponent? Parent { get; }
     GameBase Game { get; }

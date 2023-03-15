@@ -43,15 +43,16 @@ public class Rigidbody : GameObjectComponent
         if (Collide != null)
             foreach (var component in Game.AllComponents())
             {
-                if (component is not ICollider outside)
+                if (component is not ICollider other)
                     continue;
-                foreach (var any in GameObject.FindComponents<ICollider>())
+                foreach (var any in GameObject.FindComponents<ICollider>().Where(x
+                             => (((byte)x.Channel >> 1 << 1) & ((byte)other.Channel >> 1 << 1)) != 0))
                 {
-                    if (any == outside)
+                    if (any == other)
                         continue;
-                    if (any.CollidesWith2D(outside, out var p))
+                    if (any.CollidesWith2D(other, out var p))
                     {
-                        var collision = new Collision(any, outside, p!.Value.To3());
+                        var collision = new Collision(any, other, p!.Value.To3());
                         Collide(collision);
                         if (!collision.Cancelled)
                         {
