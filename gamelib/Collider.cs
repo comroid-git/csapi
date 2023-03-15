@@ -1,5 +1,6 @@
 ﻿using System.Numerics;
 using comroid.gamelib.Capability;
+using SFML.System;
 
 namespace comroid.gamelib;
 
@@ -11,26 +12,29 @@ public abstract class ColliderBase : GameObjectComponent, ICollider
     {
     }
 
-    public bool CollidesWith2D(ICollider other, out Vector2? point)
+    public bool CollidesWith2D(ICollider other, out Vector2? point, out Vector2? commonPoint)
     {
         var inv = Inverse || other.Inverse;
-        point = (inv ? ArraySegment<(Vector2 p, ICollider vs)>.Empty : GetBoundary2D().Select(p => (p, vs: other)))
+        var res = (inv
+                ? ArraySegment<((Vector2, Vector2), ICollider)>.Empty
+                : GetBoundary2D().Select(p => (p, vs: other)))
             .Concat(other.GetBoundary2D().Select(p => (p, vs: (ICollider)this)))
             .Where(any =>
             {
                 if (inv)
-                    if (any.vs.IsPointInside(any.p))
+                    if (any.vs.IsPointInside(any.p.point))
                         return true;
                     else return false;
                 else
-                    return any.vs.IsPointInside(any.p);
+                    return any.vs.IsPointInside(any.p.point);
             })
-            .Select(x => (Vector2?)x.p)
+            .Select(x => (ValueTuple<Vector2, Vector2>?)x.p)
             .FirstOrDefault(defaultValue: null);
-        return point != null;
+        (point, commonPoint) = (res?.Item1, res?.Item2);
+        return res != null;
     }
 
-    public abstract IEnumerable<Vector2> GetBoundary2D();
+    public abstract IEnumerable<(Vector2 point, Vector2 inside)> GetBoundary2D();
     public abstract bool IsPointInside(Vector2 p);
     public abstract bool IsPointInside(Vector3 p);
     public abstract Vector3 CalculateCollisionOutputDirection(Collision collision, Vector3 velocity, float bounciness);
@@ -47,14 +51,15 @@ public partial class Circle
             _circle = circle;
         }
 
-        public override IEnumerable<Vector2> GetBoundary2D()
+        public override IEnumerable<(Vector2 point, Vector2 inside)> GetBoundary2D()
         {
             const int segments = 12;
             for (var i = 1; i < segments; i++)
-                yield return AbsolutePosition.To2() +
-                             new Vector2(MathF.Sin(2 * MathF.PI * i / segments),
-                                 MathF.Cos(2 * MathF.PI * i / segments)) * _circle.Radius;
-            yield return AbsolutePosition.To2();
+            {
+                var off = new Vector2f(MathF.Sin(2 * MathF.PI * i / segments),
+                                       MathF.Cos(2 * MathF.PI * i / segments)) * _circle.Radius;
+                yield return ((_circle.Delegate.Position + off).To2(), _circle.Delegate.Position.To2());
+            }
         }
 
         public override bool IsPointInside(Vector2 p) => Vector2.Distance(AbsolutePosition.To2(), p) < _circle.Radius;
@@ -69,7 +74,8 @@ public partial class Circle
             var me = collision.Sender.AbsolutePosition;
             var other = collision.CollidedWith.AbsolutePosition;
             var at = collision.CollisionPosition;
-            var rel = other - me;
+            var com = collision.CommonPoint;
+            var rel = at-com;
         
             // this part brought to you by ChatGPT
 // Get the cross product of A and B
@@ -77,6 +83,8 @@ public partial class Circle
 
 // Get the angle between A and B
             float theta = MathF.Acos(Vector3.Dot(Vector3.Normalize(velocity), Vector3.Normalize(rel)));
+            //float delta = MathF.Acos(Vector3.Dot(Vector3.Normalize(at), Vector3.Normalize(com)));
+            //theta -= delta;
 
 // Calculate the quaternion
             Quaternion rotation = new Quaternion(
@@ -101,8 +109,9 @@ public partial class Rect
             _rect = rect;
         }
 
-        public override IEnumerable<Vector2> GetBoundary2D()
+        public override IEnumerable<(Vector2 point, Vector2 inside)> GetBoundary2D()
         {
+            var inside = Inverse ? 1 : -1;
             var sizeX = _rect.Size.X;
             var sizeY = _rect.Size.Y;
             var left = _rect.Delegate.Position.X;
@@ -111,15 +120,14 @@ public partial class Rect
             var bottom = _rect.Delegate.Position.Y + sizeY;
             for (var h = left; h <= right; h += sizeX * (5 / sizeX))
             {
-                yield return new Vector2(h, bottom);
-                yield return new Vector2(h, top);
+                yield return (new Vector2(h, top),new Vector2(h,top+inside));
+                yield return (new Vector2(h, bottom),new Vector2(h,bottom-inside));
             }
             for (var v = top; v <= bottom; v += sizeY * (5 / sizeY))
             {
-                yield return new Vector2(left, v);
-                yield return new Vector2(right, v);
+                yield return (new Vector2(left, v),new Vector2(left+inside,v));
+                yield return (new Vector2(right, v),new Vector2(right-inside,v));
             }
-            yield return AbsolutePosition.To2();
         }
 
         // this method brought to you by ChatGPT

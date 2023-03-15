@@ -102,8 +102,8 @@ public interface ICollider : IGameObjectComponent
 {
     bool Inverse { get; set; }
     
-    bool CollidesWith2D(ICollider other, out Vector2? point);
-    IEnumerable<Vector2> GetBoundary2D();
+    bool CollidesWith2D(ICollider other, out Vector2? point, out Vector2? commonPoint);
+    IEnumerable<(Vector2 point, Vector2 inside)> GetBoundary2D();
 
     bool IsPointInside(Vector2 p);
     bool IsPointInside(Vector3 p);

@@ -50,9 +50,9 @@ public class Rigidbody : GameObjectComponent
                 {
                     if (any == other)
                         continue;
-                    if (any.CollidesWith2D(other, out var p))
+                    if (any.CollidesWith2D(other, out var p, out var com))
                     {
-                        var collision = new Collision(any, other, p!.Value.To3());
+                        var collision = new Collision(any, other, p!.Value.To3(), com!.Value.To3());
                         Collide(collision);
                         if (!collision.Cancelled)
                         {
@@ -62,6 +62,7 @@ public class Rigidbody : GameObjectComponent
                     }
                 }
             }
+
         end:
         return base.LateUpdate();
     }
@@ -72,12 +73,14 @@ public sealed class Collision
     public readonly ICollider Sender;
     public readonly ICollider CollidedWith;
     public readonly Vector3 CollisionPosition;
+    public readonly Vector3 CommonPoint;
     public bool Cancelled { get; set; }
     
-    public Collision(ICollider sender, ICollider collidedWith, Vector3 collisionPosition)
+    public Collision(ICollider sender, ICollider collidedWith, Vector3 collisionPosition, Vector3 commonPoint)
     {
         Sender = sender;
         CollidedWith = collidedWith;
         CollisionPosition = collisionPosition;
+        CommonPoint = commonPoint;
     }
 }
