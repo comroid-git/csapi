@@ -110,8 +110,15 @@ public partial class Rect
             var top = _rect.Delegate.Position.Y;
             var bottom = _rect.Delegate.Position.Y + sizeY;
             for (var h = left; h <= right; h += sizeX * (5 / sizeX))
+            {
+                yield return new Vector2(h, bottom);
+                yield return new Vector2(h, top);
+            }
             for (var v = top; v <= bottom; v += sizeY * (5 / sizeY))
-                yield return new Vector2(h, v);
+            {
+                yield return new Vector2(left, v);
+                yield return new Vector2(right, v);
+            }
             yield return AbsolutePosition.To2();
         }
 
