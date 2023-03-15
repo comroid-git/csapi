@@ -111,7 +111,7 @@ public partial class Rect
 
         public override IEnumerable<(Vector2 point, Vector2 inside)> GetBoundary2D()
         {
-            var inside = Inverse ? 1 : -1;
+            var inside = Inverse ? -1 : 1;
             var sizeX = _rect.Size.X;
             var sizeY = _rect.Size.Y;
             var left = _rect.Delegate.Position.X;
