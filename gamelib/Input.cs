@@ -24,7 +24,11 @@ public sealed class KeyState
 
     internal void Press() => Push(true);
     internal void Release() => Push(false);
-    internal void Push(bool? state = null!) => (Pre, Down) = (Down, state ?? Down);
+    internal void Push(bool? state = null!)
+    {
+        lock (Input.Lock) 
+            (Pre, Down) = (Down, state ?? Down);
+    }
 
     public override string ToString()
     {
@@ -36,7 +40,7 @@ public sealed class KeyState
 
 public static class Input
 {
-    private static object Lock = new();
+    internal static object Lock = new();
     private static GameBase game = null!;
     private static RenderWindow window = null!;
     private static readonly ConcurrentDictionary<Keyboard.Key, KeyState> Key = new();
@@ -98,10 +102,8 @@ public static class Input
 
     internal static void LateUpdate()
     {
-        foreach (var state in Key.Values.Concat(MouseButton.Values)) 
-            state.Push();
         lock (Lock)
-        {
-        }
+            foreach (var state in Key.Values.Concat(MouseButton.Values))
+                state.Push();
     }
 }
