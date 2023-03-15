@@ -81,6 +81,8 @@ public interface IRenderObject : IGameObjectComponent
 
 public interface ICollider : IGameObjectComponent
 {
+    bool Inverse { get; set; }
+    
     bool CollidesWith2D(ICollider other, out Vector2? point);
     IEnumerable<Vector2> GetBoundary2D();
 
