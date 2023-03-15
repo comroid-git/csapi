@@ -1,5 +1,4 @@
-﻿using System.Data;
-using System.Numerics;
+﻿using System.Numerics;
 using SFML.Graphics;
 using SFML.System;
 
@@ -8,8 +7,6 @@ namespace comroid.gamelib;
 public abstract class RenderObjectBase<TDelegate> : GameObjectComponent, IRenderObject where TDelegate : Transformable, Drawable
 {
     public readonly TDelegate Delegate;
-
-    public event Action<TDelegate>? ApplyExtraData;
 
     protected RenderObjectBase(TDelegate @delegate, IGameObject gameObject, ITransform transform = null!)
         : base(gameObject, transform)
@@ -31,7 +28,6 @@ public abstract class RenderObjectBase<TDelegate> : GameObjectComponent, IRender
     public override void Draw(RenderWindow win)
     {
         UpdateDelegateTransformData();
-        ApplyExtraData?.Invoke(Delegate);
         win.Draw(Delegate);
         base.Draw(win);
     }
@@ -62,7 +58,6 @@ public partial class Circle : ShapeBase<CircleShape>
     public Circle(IGameObject gameObject, ITransform transform = null!)
         : base(new CircleShape(), gameObject, transform)
     {
-        //Add(new Collider(GameObject, this));
     }
 
     protected override Vector2f GetDelegateTransformData_Position() => (AbsolutePosition - Vector3.One * Radius).To2f();
@@ -79,7 +74,6 @@ public partial class Rect : ShapeBase<RectangleShape>
     public Rect(IGameObject gameObject, ITransform transform = null!)
         : base(new RectangleShape(new Vector2f(1,1)), gameObject, transform)
     {
-        //Add(new Collider(GameObject, this));
     }
 
     protected override Vector2f GetDelegateTransformData_Position() => AbsolutePosition.To2f() - Size / 2;
