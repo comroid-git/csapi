@@ -73,20 +73,17 @@ public partial class Circle
         
             // this part brought to you by ChatGPT
 // Get the cross product of A and B
-            Vector3 r = Vector3.Cross(me, at);
-
-// Get the magnitude of r
-            float rMagnitude = r.Length();
+            Vector3 r = Vector3.Normalize(Vector3.Cross(me, at));
 
 // Get the angle between A and B
             float theta = MathF.Acos(Vector3.Dot(Vector3.Normalize(velocity), Vector3.Normalize(rel)));
 
 // Calculate the quaternion
             Quaternion rotation = new Quaternion(
-                MathF.Cos(theta),
-                MathF.Sin(theta) * (r.X / rMagnitude),
-                MathF.Sin(theta) * (r.Y / rMagnitude),
-                MathF.Sin(theta) * (r.Z / rMagnitude)
+                MathF.Sin(theta) * r.X,
+                MathF.Sin(theta) * r.Y,
+                MathF.Sin(theta) * r.Z,
+                MathF.Cos(theta)
             );
             return Vector3.Transform(velocity, rotation) * bounciness * velocityMagnitude;
         }
