@@ -79,8 +79,8 @@ public interface IGameComponent : ITransform, ILoadable, IEnableable, IUpdatable
     ITransform Transform { get; }
     
     R? Add<R>(string? name = null) where R : IGameComponent;
-    R? FindComponent<R>();
-    IEnumerable<R> FindComponents<R>();
+    R? FindComponent<R>() where R : IGameComponent;
+    IEnumerable<R> FindComponents<R>() where R : IGameComponent;
     IEnumerable<IGameComponent> AllComponents();
     bool Destroy();
 }
