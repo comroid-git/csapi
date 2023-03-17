@@ -107,5 +107,5 @@ public interface ICollider : IGameObjectComponent
 
     bool IsPointInside(Vector2 p);
     bool IsPointInside(Vector3 p);
-    Vector3 CalculateCollisionOutputDirection(Collision collision, Vector3 velocity, float bounciness);
+    Vector3 CalculateCollisionOutputVelocity(Collision collision, Vector3 velocity, float bounciness);
 }
