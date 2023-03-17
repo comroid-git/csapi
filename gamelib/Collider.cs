@@ -65,20 +65,22 @@ public partial class Circle
             _circle = circle;
         }
 
+        private float radius => _circle.Radius * Scale.X;
+
         public override IEnumerable<(Vector2 point, Vector2 inside)> GetBoundary2D()
         {
             const int segments = 12;
             for (var i = 1; i < segments; i++)
             {
                 var off = new Vector2f(MathF.Sin(2 * MathF.PI * i / segments),
-                                       MathF.Cos(2 * MathF.PI * i / segments)) * _circle.Radius;
-                yield return ((_circle.Delegate.Position + off).To2(), _circle.Delegate.Position.To2());
+                                       MathF.Cos(2 * MathF.PI * i / segments)) * radius;
+                yield return (_circle.GetDelegateTransformData_Position().To2() + off.To2(), _circle.GetDelegateTransformData_Position().To2());
             }
         }
 
-        public override bool IsPointInside(Vector2 p) => Vector2.Distance(AbsolutePosition.To2(), p) < _circle.Radius;
-        public override bool IsPointInside(Vector3 p) => Vector3.Distance(AbsolutePosition, p) < _circle.Radius;
-        public override Vector3 CalculateCollisionOutputDirection(Collision collision, Vector3 velocity, float bounciness)
+        public override bool IsPointInside(Vector2 p) => Vector2.Distance(_circle.GetDelegateTransformData_Position().To2(), p) < radius;
+        public override bool IsPointInside(Vector3 p) => Vector3.Distance(_circle.GetDelegateTransformData_Position().To3(), p) < radius;
+        public override Vector3 CalculateCollisionOutputVelocity(Collision collision, Vector3 velocity, float bounciness)
         {
             var velocityMagnitude = velocity.Length();
             if (velocityMagnitude == 0)
@@ -123,10 +125,16 @@ public partial class Rect
             _rect = rect;
         }
 
+        private Vector2 size => _rect.Size.To2() * _rect.GetDelegateTransformData_Scale().To2();
+
         public override IEnumerable<(Vector2 point, Vector2 inside)> GetBoundary2D()
         {
             var inside = Inverse ? -1 : 1;
             var left = _rect.GetDelegateTransformData_Position().X;
+            var right = _rect.GetDelegateTransformData_Position().X + size.X;
+            var top = _rect.GetDelegateTransformData_Position().Y;
+            var bottom = _rect.GetDelegateTransformData_Position().Y + size.Y;
+            for (var h = left; h <= right; h += size.X * (5 / size.X))
             {
                 yield return (new Vector2(h, top),new Vector2(h,top+inside));
                 yield return (new Vector2(h, bottom),new Vector2(h,bottom-inside));
@@ -146,8 +154,10 @@ public partial class Rect
             //var halfHeight = _rect.Size.Y / 2f;
 
             // Calculate the left, right, top, and bottom edges of the rectangle
-            var top = _rect.Delegate.Position.Y;
-            var bottom = _rect.Delegate.Position.Y + _rect.Size.Y;
+            var left = _rect.GetDelegateTransformData_Position().X;
+            var right = _rect.GetDelegateTransformData_Position().X + size.X;
+            var top = _rect.GetDelegateTransformData_Position().Y;
+            var bottom = _rect.GetDelegateTransformData_Position().Y + size.Y;
 
             // Check if the point is inside the rectangle
             return point.X > left && point.X < right && point.Y > top && point.Y < bottom;
@@ -162,12 +172,12 @@ public partial class Rect
             //var halfDepth = AbsoluteScale.Z / 2f;
 
             // Calculate the left, right, top, bottom, front, and back planes of the prism
-            var left = _rect.Delegate.Position.X;
-            var right = _rect.Delegate.Position.X + _rect.Size.X;
-            var top = _rect.Delegate.Position.Y;
-            var bottom = _rect.Delegate.Position.Y + _rect.Size.Y;
-            var front = AbsolutePosition.Z;
-            var back = AbsolutePosition.Z + AbsoluteScale.Z;
+            var left = _rect.GetDelegateTransformData_Position().X;
+            var right = _rect.GetDelegateTransformData_Position().X + size.X;
+            var top = _rect.GetDelegateTransformData_Position().Y;
+            var bottom = _rect.GetDelegateTransformData_Position().Y + size.Y;
+            var front = _rect.AbsolutePosition.Z;
+            var back = _rect.AbsolutePosition.Z + AbsoluteScale.Z - 1;
 
             // Check if the point is inside the prism
             return point.X > left && point.X < right && point.Y > bottom && point.Y < top && point.Z > back && point.Z < front;
