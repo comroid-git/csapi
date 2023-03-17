@@ -8,8 +8,10 @@ public class Rigidbody : GameObjectComponent
     public float Friction { get; set; }
     public float Bounciness { get; set; }
     public Vector3 Velocity { get; set; }
+    public Vector3 MeasuredVelocity { get; set; }
     public Vector3 VelocityFreeze { get; set; }
     public Vector3 PositionFreeze { get; set; }
+    private Vector3 PrevPos { get; set; }
 
     public event Action<Collision>? Collide;
 
@@ -21,6 +23,10 @@ public class Rigidbody : GameObjectComponent
     {
         return WithinFreeze(() =>
         {
+            // measure actual velocity (e.g. for user controlled objects)
+            MeasuredVelocity = PrevPos - AbsolutePosition;
+            PrevPos = AbsolutePosition;
+            
             // apply friction
             Velocity *= 1 - Friction * Math.Min(Game.DeltaTime, 1);
 
