@@ -51,7 +51,7 @@ public abstract class ColliderBase : GameObjectComponent, ICollider
     public abstract IEnumerable<(Vector2 point, Vector2 inside)> GetBoundary2D();
     public abstract bool IsPointInside(Vector2 p);
     public abstract bool IsPointInside(Vector3 p);
-    public abstract Vector3 CalculateCollisionOutputDirection(Collision collision, Vector3 velocity, float bounciness);
+    public abstract Vector3 CalculateCollisionOutputVelocity(Collision collision, Vector3 velocity, float bounciness);
 }
 
 public partial class Circle
@@ -181,7 +181,7 @@ public partial class Rect
             return point.X > left && point.X < right && point.Y > bottom && point.Y < top && point.Z > back && point.Z < front;
         }
 
-        public override Vector3 CalculateCollisionOutputDirection(Collision collision, Vector3 velocity, float bounciness)
+        public override Vector3 CalculateCollisionOutputVelocity(Collision collision, Vector3 velocity, float bounciness)
         {
             throw new NotImplementedException();
         }

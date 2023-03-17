@@ -9,8 +9,8 @@ public class Rigidbody : GameObjectComponent
     public float Bounciness { get; set; }
     public Vector3 Velocity { get; set; }
     public Vector3 MeasuredVelocity { get; set; }
-    public Vector3 VelocityFreeze { get; set; }
-    public Vector3 PositionFreeze { get; set; }
+    public Vector3 VelocityFactor { get; set; }
+    public Vector3 PositionFactor { get; set; }
     private Vector3 PrevPos { get; set; }
 
     public event Action<Collision>? Collide;
@@ -72,8 +72,8 @@ public class Rigidbody : GameObjectComponent
 
     private T WithinFreeze<T>(Func<T> action)
     {
-        var pos0 = Position * PositionFreeze;
-        var vel0 = Velocity * VelocityFreeze;
+        var pos0 = Position * PositionFactor;
+        var vel0 = Velocity * VelocityFactor;
 
         var t = action();
 
