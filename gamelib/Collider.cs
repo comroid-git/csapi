@@ -16,9 +16,10 @@ public abstract class ColliderBase : GameObjectComponent, ICollider
     {
         var inv = Inverse || other.Inverse;
         var res = (inv
-                ? ArraySegment<((Vector2, Vector2), ICollider)>.Empty
-                : GetBoundary2D().Select(p => (p, vs: other)))
-            .Concat(other.GetBoundary2D().Select(p => (p, vs: (ICollider)this)))
+                ? ArraySegment<((Vector2, Vector2), ICollider, ICollider)>.Empty
+                : GetBoundary2D().Select(p => (p, it:(ICollider)this, vs: other)))
+            .Concat(other.GetBoundary2D().Select(p => (p, it:other, vs: (ICollider)this)))
+            .SelectMany(ProjectPath)
             .Where(any =>
             {
                 if (inv)
@@ -32,6 +33,19 @@ public abstract class ColliderBase : GameObjectComponent, ICollider
             .FirstOrDefault(defaultValue: null);
         (point, commonPoint) = (res?.Item1, res?.Item2);
         return res != null;
+    }
+
+    private IEnumerable<((Vector2 point, Vector2 inside) p, ICollider vs)> ProjectPath(
+        ((Vector2 point, Vector2 inside) p, ICollider it, ICollider vs) arg)
+    {
+        yield return ((arg.p.point, arg.p.inside), arg.vs);
+        if (arg.it.FindComponent<Rigidbody>() is { } rigidbody)
+        {
+            var velocity = rigidbody.Velocity;
+            var iterations = (int)Math.Ceiling(velocity.Length());
+            for (var i = 1; i < iterations; i++)
+                yield return ((arg.p.point + velocity.To2() * Game.DeltaTime * (i / 2), arg.p.inside), arg.vs);
+        }
     }
 
     public abstract IEnumerable<(Vector2 point, Vector2 inside)> GetBoundary2D();
