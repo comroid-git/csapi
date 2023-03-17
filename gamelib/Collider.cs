@@ -93,7 +93,7 @@ public partial class Circle
         
             // this part brought to you by ChatGPT
 // Get the cross product of A and B
-            Vector3 r = Vector3.Normalize(Vector3.Cross(me, at));
+            Vector3 r = Vector3.Cross(velocity, rel);
 
 // Get the angle between A and B
             float theta = MathF.Acos(Vector3.Dot(Vector3.Normalize(velocity), Vector3.Normalize(rel)));
@@ -126,18 +126,12 @@ public partial class Rect
         public override IEnumerable<(Vector2 point, Vector2 inside)> GetBoundary2D()
         {
             var inside = Inverse ? -1 : 1;
-            var sizeX = _rect.Size.X;
-            var sizeY = _rect.Size.Y;
-            var left = _rect.Delegate.Position.X;
-            var right = _rect.Delegate.Position.X + sizeX;
-            var top = _rect.Delegate.Position.Y;
-            var bottom = _rect.Delegate.Position.Y + sizeY;
-            for (var h = left; h <= right; h += sizeX * (5 / sizeX))
+            var left = _rect.GetDelegateTransformData_Position().X;
             {
                 yield return (new Vector2(h, top),new Vector2(h,top+inside));
                 yield return (new Vector2(h, bottom),new Vector2(h,bottom-inside));
             }
-            for (var v = top; v <= bottom; v += sizeY * (5 / sizeY))
+            for (var v = top; v <= bottom; v += size.Y * (5 / size.Y))
             {
                 yield return (new Vector2(left, v),new Vector2(left+inside,v));
                 yield return (new Vector2(right, v),new Vector2(right-inside,v));
@@ -152,8 +146,6 @@ public partial class Rect
             //var halfHeight = _rect.Size.Y / 2f;
 
             // Calculate the left, right, top, and bottom edges of the rectangle
-            var left = _rect.Delegate.Position.X;
-            var right = _rect.Delegate.Position.X + _rect.Size.X;
             var top = _rect.Delegate.Position.Y;
             var bottom = _rect.Delegate.Position.Y + _rect.Size.Y;
 
