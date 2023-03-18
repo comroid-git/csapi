@@ -85,31 +85,23 @@ public partial class Circle
             var velocityMagnitude = velocity.Length();
             if (velocityMagnitude == 0)
                 return velocity;
-            velocity = Vector3.Normalize(velocity);
+            
+            // Get the surface normal at the point of collision
+            Vector3 surfaceNormal = Vector3.Normalize(collision.CollisionPosition - collision.CommonPoint);
 
-            var me = collision.Sender.AbsolutePosition;
-            var other = collision.CollidedWith.AbsolutePosition;
-            var at = collision.CollisionPosition;
-            var com = collision.CommonPoint;
-            var rel = at-com;
-        
-            // this part brought to you by ChatGPT
-// Get the cross product of A and B
-            Vector3 r = Vector3.Cross(velocity, rel);
+            // Calculate the incoming velocity relative to the surface of collision
+            float incomingVelocity = Vector3.Dot(velocity, surfaceNormal);
 
-// Get the angle between A and B
-            float theta = MathF.Acos(Vector3.Dot(Vector3.Normalize(velocity), Vector3.Normalize(rel)));
-            //float delta = MathF.Acos(Vector3.Dot(Vector3.Normalize(at), Vector3.Normalize(com)));
-            //theta -= delta;
+            // Calculate the outgoing velocity after the collision
+            float outgoingVelocity = -incomingVelocity * bounciness;
 
-// Calculate the quaternion
-            Quaternion rotation = new Quaternion(
-                MathF.Sin(theta) * r.X,
-                MathF.Sin(theta) * r.Y,
-                MathF.Sin(theta) * r.Z,
-                MathF.Cos(theta)
-            );
-            return Vector3.Transform(velocity, rotation) * bounciness * velocityMagnitude;
+            // Calculate the change in velocity
+            float deltaVelocity = outgoingVelocity - incomingVelocity;
+
+            // Apply the change in velocity to the velocity vector
+            Vector3 outputVelocity = velocity + deltaVelocity * surfaceNormal;
+
+            return outputVelocity;
         }
     }
 }
