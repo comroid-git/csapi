@@ -57,7 +57,7 @@ public class Rigidbody : GameObjectComponent
                             Collide(collision);
                             if (!collision.Cancelled)
                             {
-                                Velocity = any.CalculateCollisionOutputDirection(collision, Velocity,
+                                Velocity = any.CalculateCollisionOutputVelocity(collision, Velocity,
                                     Bounciness * (other.GameObject.FindComponent<Rigidbody>()?.Bounciness ?? 1));
                                 goto end;
                             }
