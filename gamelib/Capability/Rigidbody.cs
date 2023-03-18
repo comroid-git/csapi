@@ -42,25 +42,38 @@ public class Rigidbody : GameObjectComponent
         return WithinFreeze(() =>
         {
             if (Collide != null)
-                foreach (var component in Game.AllComponents())
+                foreach (var other in Game.FindComponents<ICollider>())
+                foreach (var any in GameObject.FindComponents<ICollider>().Where(x
+                             => (((byte)x.Channel >> 1 << 1) & ((byte)other.Channel >> 1 << 1)) != 0))
                 {
-                    if (component is not ICollider other)
+                    // equality check
+                    if (any == other)
                         continue;
-                    foreach (var any in GameObject.FindComponents<ICollider>().Where(x
-                                 => (((byte)x.Channel >> 1 << 1) & ((byte)other.Channel >> 1 << 1)) != 0))
+                    if (any.CollidesWith2D(other, out var p, out var com))
                     {
-                        if (any == other)
-                            continue;
-                        if (any.CollidesWith2D(other, out var p, out var com))
+                        // move any out of bounds of other 
+                        // calculate collision normal vector
+                        Vector3 normal = Vector3.Normalize(p!.Value.To3() - com!.Value.To3());
+
+                        // calculate minimum translation distance
+                        float distance = normal.Length();
+
+                        // move any out of bounds of other 
+                        if (distance > 0)
                         {
-                            var collision = new Collision(any, other, p!.Value.To3(), com!.Value.To3());
-                            Collide(collision);
-                            if (!collision.Cancelled)
-                            {
-                                Velocity = any.CalculateCollisionOutputVelocity(collision, Velocity,
-                                    Bounciness * (other.GameObject.FindComponent<Rigidbody>()?.Bounciness ?? 1));
-                                goto end;
-                            }
+                            any.Transform.Position += distance * normal;
+                        }
+
+                        // create the collision
+                        var collision = new Collision(any, other, p!.Value.To3(), com!.Value.To3());
+                        Collide(collision);
+
+                        // handle the collision if it was not cancelled by a handler
+                        if (!collision.Cancelled)
+                        {
+                            Velocity = any.CalculateCollisionOutputVelocity(collision, Velocity,
+                                Bounciness * (other.GameObject.FindComponent<Rigidbody>()?.Bounciness ?? 1));
+                            goto end;
                         }
                     }
                 }
