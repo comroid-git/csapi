@@ -100,7 +100,7 @@ public abstract class GameComponent : Container<IGameComponent>, IGameComponent
     public R? FindComponent<R>() where R : IGameComponent => FindComponents<R>().FirstOrDefault();
 
     public IEnumerable<R> FindComponents<R>() where R : IGameComponent => this
-        .CastOrSkip<IGameComponent, R>()
+        .CastOrSkip<R>()
         .Concat(this.SelectMany(x => x.FindComponents<R>()));
 
     public IEnumerable<IGameComponent> AllComponents() => this.Concat(this.SelectMany(x => x.AllComponents()));
