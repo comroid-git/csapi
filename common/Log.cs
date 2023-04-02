@@ -66,13 +66,21 @@ public interface ILog
 
 public class Log : ILog
 {
-    public static readonly Log Root = new();
-    public static readonly Log Debug = new(typeof(Debug)) { Writer = new DebugWriter() };
+    private const LogLevel UnsetLevel = unchecked((LogLevel)(-1));
+    public const LogLevel DefaultLevel =
+#if DEBUG
+            LogLevel.Trace
+#else
+            LogLevel.Info
+#endif
+        ;
+    public static readonly Log Root = new("Root");
+    public static readonly Log Debug = new(Root, typeof(Debug), "Debug") { Writer = new DebugWriter() };
     private readonly ILog? _parent;
-    private bool? _fullNames;
-    private LogLevel? _level;
-    private string? _name;
-    private TextWriter? _writer;
+    private bool? _fullNames = null;
+    private LogLevel? _level = UnsetLevel;
+    private string? _name = null;
+    private TextWriter? _writer = null;
 
     public Log() : this(null!)
     {
@@ -109,13 +117,7 @@ public class Log : ILog
 
     public LogLevel Level
     {
-        get => _level ?? _parent?.Level ??
-#if DEBUG
-            LogLevel.Trace
-#else
-            LogLevel.Info
-#endif
-        ;
+        get => _level == UnsetLevel ? DefaultLevel : _level ?? _parent?.Level ?? DefaultLevel;
         set => _level = value;
     }
 
@@ -156,7 +158,7 @@ public class Log : ILog
 
     private R? _FB<R>(object message, Func<object, R?>? fallback)
     {
-        return fallback != null ? fallback(message) ?? default : (R?)(object)null!;
+        return RunWithExceptionLogger(() => fallback != null ? fallback(message) ?? default : (R?)(object)null!);
     }
 
     private string _LV(LogLevel level)
