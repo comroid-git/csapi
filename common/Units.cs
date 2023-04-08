@@ -147,7 +147,7 @@ public sealed class UnitCategory : List<Unit>
     public string Name { get; }
     public string FullName
     {
-        get => (Parent?.Name ?? string.Empty) + "/" + Name;
+        get => (Parent?.FullName ?? string.Empty) + "/" + Name;
     }
     public UnitCategory Parent { get; }
     public List<UnitCategory> Children { get; } = new();
@@ -243,7 +243,7 @@ public class Unit
     }
     public string FullName
     {
-        get => (Category?.Name ?? string.Empty) + "/" + Name;
+        get => (Category?.FullName ?? string.Empty) + "/" + Name;
     }
 
     public int Base { get; init; } = 10;
