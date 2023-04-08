@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 
@@ -76,5 +77,34 @@ public static class DebugUtil
     {
         var epochStart = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
         return (DateTime.UtcNow - epochStart).Ticks / 10;
+    }
+
+    public static bool TouchFile(string path) => TouchFile(path, out _, out _, true);
+    public static bool TouchFile(string path, out Exception? e) => TouchFile(path, out _, out e, true);
+    public static bool TouchFile(string path, out FileStream? fs, FileMode mode = FileMode.OpenOrCreate) =>
+        TouchFile(path, out fs, out _, mode: mode);
+    public static bool TouchFile(string path, out FileStream? fs, out Exception? e, bool dispose = false,
+        FileMode mode = FileMode.OpenOrCreate)
+    {
+        e = null;
+        fs = null;
+        if (File.Exists(path))
+            return dispose || (fs = File.Open(path, mode)) != null;
+        try
+        {
+            fs = File.Create(path);
+            fs.Flush();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            e = ex;
+            return fs != null;
+        }
+        finally
+        {
+            if (dispose)
+                fs?.Dispose();
+        }
     }
 }

@@ -97,6 +97,29 @@ public static class Extensions
             throw task.Exception;
         return task.Result;
     }
+
+    public static StreamWriter ToStreamWriter(this TextWriter writer) => new(new TextWriterStream(writer));
+}
+
+internal class TextWriterStream : Stream
+{
+    private readonly TextWriter writer;
+    public TextWriterStream(TextWriter writer) => this.writer = writer;
+    public override void Flush() => writer.Flush();
+    public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+    public override void SetLength(long value) => throw new NotSupportedException();
+    public override void Write(byte[] buffer, int offset, int count) =>
+        writer.Write(buffer.Select(x => (char)x).ToArray(), offset, count);
+    public override bool CanRead => false;
+    public override bool CanSeek => false;
+    public override bool CanWrite => true;
+    public override long Length => -1;
+    public override long Position
+    {
+        get => -1;
+        set => throw new NotSupportedException();
+    }
 }
 
 public class TempFile : FileSystemInfo, IDisposable

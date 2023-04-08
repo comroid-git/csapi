@@ -64,15 +64,46 @@ public interface ILog
     R? At<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false);
 }
 
+internal class LogLevelTextWriter : TextWriter
+{
+    private readonly Log log;
+    private readonly LogLevel level;
+    private readonly StringBuilder buffer = new();
+
+    public LogLevelTextWriter(Log log, LogLevel level)
+    {
+        this.log = log;
+        this.level = level;
+    }
+    
+    public override Encoding Encoding => Encoding.ASCII;
+
+    public override void Write(char value) => buffer.Append(value);
+
+    public override void Flush()
+    {
+        log.At(level, buffer);
+        buffer.Clear();
+    }
+}
+
 public class Log : ILog
 {
-    public static readonly Log Root = new();
-    public static readonly Log Debug = new(typeof(Debug)) { Writer = new DebugWriter() };
+    private const LogLevel UnsetLevel = unchecked((LogLevel)(-1));
+    public const LogLevel DefaultLevel =
+#if DEBUG
+            LogLevel.Trace
+#else
+            LogLevel.Info
+#endif
+        ;
+    public static readonly Log Root = new("Root");
+    public static readonly Log Debug = new(Root, typeof(Debug), "Debug") { Writer = new DebugWriter() };
     private readonly ILog? _parent;
-    private bool? _fullNames;
-    private LogLevel? _level;
-    private string? _name;
-    private TextWriter? _writer;
+    private bool? _fullNames = null;
+    private LogLevel? _level = UnsetLevel;
+    private string? _name = null;
+    private TextWriter? _writer = null;
 
     public Log() : this(null!)
     {
@@ -109,13 +140,7 @@ public class Log : ILog
 
     public LogLevel Level
     {
-        get => _level ?? _parent?.Level ??
-#if DEBUG
-            LogLevel.Trace
-#else
-            LogLevel.Info
-#endif
-        ;
+        get => _level == UnsetLevel ? DefaultLevel : _level ?? _parent?.Level ?? DefaultLevel;
         set => _level = value;
     }
 
@@ -125,18 +150,21 @@ public class Log : ILog
         set => _writer = value;
     }
 
-    public object? At(LogLevel level, object message, Func<object, object?>? fallback = null, bool error = false)
+    public TextWriter CreateWriter(LogLevel level) => new LogLevelTextWriter(this, level);
+
+    public object? At(LogLevel level, object? message, Func<object, object?>? fallback = null, bool error = false)
     {
         return _Log(level, message, fallback, error);
     }
 
-    public R? At<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false)
+    public R? At<R>(LogLevel level, object? message, Func<object, R?>? fallback = null, bool error = false)
     {
         return _Log(level, message, fallback, error);
     }
 
-    private R? _Log<R>(LogLevel level, object message, Func<object, R?>? fallback, bool error)
+    private R? _Log<R>(LogLevel level, object? message, Func<object, R?>? fallback, bool error)
     {
+        message ??= string.Empty;
         var fb = _FB(message, fallback);
         if (Level < level)
             return fb;
@@ -156,7 +184,7 @@ public class Log : ILog
 
     private R? _FB<R>(object message, Func<object, R?>? fallback)
     {
-        return fallback != null ? fallback(message) ?? default : (R?)(object)null!;
+        return RunWithExceptionLogger(() => fallback != null ? fallback(message) ?? default : (R?)(object)null!);
     }
 
     private string _LV(LogLevel level)

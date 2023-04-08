@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -30,9 +31,9 @@ public static class LinqUtil
             yield return (R?)(object?)it ?? fallback();
     }
 
-    public static IEnumerable<R> CastOrSkip<T, R>(this IEnumerable<T> input)
+    public static IEnumerable<R> CastOrSkip<R>(this IEnumerable input)
     {
         foreach (var it in input)
-            if (it is R) yield return (R)(object)it;
+            if (it is R) yield return (R)it;
     }
 }
