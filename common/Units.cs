@@ -121,8 +121,6 @@ public static class Units
 
     #region Extensions
 
-    internal static UnitValue OrDefault(this UnitValue? it) => it ?? EmptyValue;
-
     public static double ConvertTo(this SiPrefix from, SiPrefix to, double value, int @base)
         => from == to ? value : value * Math.Pow(@base, from - to) * Math.Max(1, /*todo: this is wrong but works with 8 and 10*/10 - @base);
     public static double Apply(this UnitOperator op, params double[] values) => values.Aggregate((l, r) => op switch
@@ -346,15 +344,13 @@ public class UnitValue : UnitInstance
     public static UnitValue operator *(UnitValue l, UnitValue r) => UnitCategory.Base.IterateAccumulators()
         .Select(acc => acc(UnitOperator.Multiply, l, r))
         .CastOrSkip<UnitValue>()
-        .FirstOrDefault()
-        .OrDefault();
+        .FirstOrDefault() ?? new UnitValue(new CombinationUnit(l, r), (double)l * (double)r);
     public static UnitValue operator /(double right, UnitValue l) => l / right;
     public static UnitValue operator /(UnitValue l, double right) => l / (Units.EmptyUnit * right);
     public static UnitValue operator /(UnitValue l, UnitValue r) => UnitCategory.Base.IterateAccumulators()
         .Select(acc => acc(UnitOperator.Divide, l, r))
         .CastOrSkip<UnitValue>()
-        .FirstOrDefault()
-        .OrDefault();
+        .FirstOrDefault() ?? new UnitValue(new CombinationUnit(l, r), (double)l * (double)r);
 
     public static UnitValue operator |(UnitValue value, SiPrefix prefix)
         => new(value as Unit | prefix, value.SiPrefix.ConvertTo(prefix, value.Value, value.Base));
