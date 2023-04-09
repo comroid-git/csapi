@@ -98,8 +98,6 @@ public static class Units
 
     #region Extensions
 
-    internal static SiPrefix OrDefault(this SiPrefix? it) => it ?? SiPrefix.One;
-    internal static Unit OrDefault(this Unit? it) => it ?? EmptyUnit;
     internal static UnitValue OrDefault(this UnitValue? it) => it ?? EmptyValue;
 
     public static double ConvertTo(this SiPrefix from, SiPrefix to, double value, int @base)
