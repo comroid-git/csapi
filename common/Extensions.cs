@@ -87,7 +87,7 @@ public static class Extensions
             else md5.TransformBlock(contentBytes, 0, contentBytes.Length, contentBytes, 0);
         }
 
-        return BitConverter.ToString(md5.Hash).Replace("-", "").ToLower();
+        return BitConverter.ToString(md5.Hash!).Replace("-", "").ToLower();
     }
 
     public static T Await<T>(this Task<T> task)
