@@ -46,4 +46,16 @@ public class TestUnits
         Assert.That(output.ToString(), Is.EqualTo("3680W"));
         Assert.That(output.Normalize().ToString(), Is.EqualTo($"{3.68}kW"));
     }
+
+    [Test]
+    public void TestCombinationUnit()
+    {
+        var P = 5 * Units.Watts * SiPrefix.k;
+        var t = 2 * Units.Hours;
+        var output = P * t;
+
+        Assert.That((double)output, Is.EqualTo(5 * 2 * 1000));
+        Assert.That((output | SiPrefix.One).ToString(), Is.EqualTo("10000Wh"));
+        Assert.That(output.Normalize().ToString(), Is.EqualTo("10kWh"));
+    }
 }
