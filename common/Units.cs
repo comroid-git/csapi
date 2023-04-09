@@ -53,11 +53,13 @@ public static class Units
         AstronomicalUnit = new Unit(Distance, "Au") { Name = "AstronomicalUnit" };
         LightSecond = new Unit(Distance, "Ls") { Name = "LightSecond" };
         LightYear = new Unit(Distance, "Ly") { Name = "LightYear" };
+        Parsec = new Unit(Distance, "pc") { Name = "Parsec" };
         RegisterFactorUnitChain(
             (Meter, 1),
             (LightSecond, 299_792_458),
-            (AstronomicalUnit, 499.001996008),
-            (LightYear, 63_241));
+            (AstronomicalUnit, 499.001_996_008),
+            (LightYear, 63_241),
+            (Parsec, 3.261_56));
 
         Electrical = new UnitCategory("electrical", Physics);
         Volts = new Unit(Electrical, "V") { Name = "Volt" };
@@ -100,6 +102,7 @@ public static class Units
     public static readonly Unit AstronomicalUnit;
     public static readonly Unit LightSecond;
     public static readonly Unit LightYear;
+    public static readonly Unit Parsec;
     
     public static readonly UnitCategory Electrical;
     public static readonly Unit Volts;
