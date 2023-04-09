@@ -19,13 +19,13 @@ public static class Units
 
         // predefined units
         Time = new UnitCategory("time");
-        Years = new Unit(Time, "y") { Name = "Years" };
-        Months = new Unit(Time, "mo") { Name = "Months", Strategy = { FactorUnit(12, Years) } };
-        Weeks = new Unit(Time, "w") { Name = "Weeks" };
-        Days = new Unit(Time, "d") { Name = "Days", Strategy = { FactorUnit(7, Weeks) } };
-        Hours = new Unit(Time, "mo") { Name = "Hours", Strategy = { FactorUnit(24, Days) } };
-        Minutes = new Unit(Time, "mo") { Name = "Minutes", Strategy = { FactorUnit(60, Hours) } };
-        Seconds = new Unit(Time, "mo") { Name = "Seconds", Strategy = { FactorUnit(60, Minutes) } };
+        Seconds = new Unit(Time, "s") { Name = "Seconds" };
+        Minutes = new Unit(Time, "min") { Name = "Minutes", Strategy = { FactorUnit(60, Seconds) } };
+        Hours = new Unit(Time, "h") { Name = "Hours", Strategy = { FactorUnit(60, Minutes) } };
+        Days = new Unit(Time, "d") { Name = "Days", Strategy = { FactorUnit(24, Hours) } };
+        Weeks = new Unit(Time, "w") { Name = "Weeks", Strategy = { FactorUnit(7, Days) } };
+        Months = new Unit(Time, "mo") { Name = "Months" };
+        Years = new Unit(Time, "y") { Name = "Years", Strategy = { FactorUnit(12, Months) } };
 
         Programming = new UnitCategory("programming");
         Bytes = new Unit(Programming, "B") { Name = "Byte", Base = 8 };
@@ -81,20 +81,15 @@ public static class Units
         };
     public static UnitAccumulator CreateAccumulator_CombinationUnit(Unit lhs, UnitOperator _op, Unit rhs, Unit output)
     {
-        (double value, Unit unit)? Accumulate(UnitOperator op, (double value, Unit unit) l, (double value, Unit unit) r)
-            => op == _op && lhs == l.unit && rhs == r.unit ? (op.Apply(l.value, r.value), output) : null;
+        UnitValue? Accumulate(UnitOperator op, UnitValue l, UnitValue r) => op == _op && lhs == l && rhs == r ? new UnitValue(output, op.Apply(l, r)) : null;
         return _op == UnitOperator.Multiply ? WrapAccumulator_BiDirectional(Accumulate, false) : Accumulate;
     }
 
     public static UnitAccumulatorStrategy FactorUnit(double factor, Unit output)
-        => input => new[]
-        {
-            CreateAccumulator_FactorUnit(UnitOperator.Multiply, input, factor, output),
-            CreateAccumulator_FactorUnit(UnitOperator.Divide, output, factor, input)
-        };
+        => input => new[] { CreateAccumulator_FactorUnit(UnitOperator.Multiply, input, factor, output) };
     public static UnitAccumulator CreateAccumulator_FactorUnit(UnitOperator _op, Unit lhs, double factor, Unit output)
         => WrapAccumulator_BiDirectional((op, l, r)
-            => op == _op && l.unit == lhs && r.value == factor ? (op.Apply(l.value, factor), output) : null);
+            => op == _op && l == lhs && r == factor ? new UnitValue(output, op.Apply(l, factor)) : null);
 
     public static UnitAccumulator WrapAccumulator_BiDirectional(UnitAccumulator wrap, bool opInverse = true)
         => (op, l, r) => wrap(op, l, r) ?? wrap(opInverse ? op.Inverse() : op, r, l);
@@ -205,11 +200,7 @@ public sealed class UnitCategory : List<Unit>
 }
 
 public delegate IEnumerable<UnitAccumulator> UnitAccumulatorStrategy(Unit unit);
-
-public delegate (double value, Unit unit)? UnitAccumulator(
-    UnitOperator op,
-    (double value, Unit unit) lhs,
-    (double value, Unit unit) rhs);
+public delegate UnitValue? UnitAccumulator(UnitOperator op, UnitValue lhs, UnitValue rhs);
 
 public enum UnitOperator
 {
@@ -296,13 +287,20 @@ internal class CombinationUnit : Unit
 
 public class UnitInstance : Unit
 {
+    private readonly Unit _unit;
     public UnitInstance(Unit unit, SiPrefix siPrefix) : base(unit.Category, unit.Identifier)
     {
+        _unit = unit;
         Base = unit.Base;
         SiPrefix = siPrefix;
     }
 
     public override SiPrefix SiPrefix { get; }
+    public override string Name
+    {
+        get => _unit.Name;
+        set => _unit.Name = value;
+    }
 }
 
 public class UnitValue : UnitInstance
@@ -315,32 +313,32 @@ public class UnitValue : UnitInstance
 
     public double Value { get; }
 
-    private static UnitValue ThrowUnitMismatch(Unit left, Unit right, string op)
-        => throw new ArgumentException($"Unit Mismatch; cannot {op} Unit {left.Name} and {right.Name}");
+    public static UnitValue operator +(double right, UnitValue left) => left + right;
     public static UnitValue operator +(UnitValue left, double right) => left + (left as Unit) * right;
-    public static UnitValue operator +(double right, UnitValue left) => left + (left as Unit) * right;
-    public static UnitValue operator +(UnitValue left, UnitValue right) => left != right ? ThrowUnitMismatch(left, right, "add") : (left as Unit) * (left.Value + right.Value);
+    public static UnitValue operator +(UnitValue left, UnitValue right) => (left as Unit) * (left.Value + right.Value);
+    public static UnitValue operator -(double right, UnitValue left) => left - right;
     public static UnitValue operator -(UnitValue left, double right) => left - (left as Unit) * right;
-    public static UnitValue operator -(double right, UnitValue left) => left - (left as Unit) * right;
-    public static UnitValue operator -(UnitValue left, UnitValue right) => left != right ? ThrowUnitMismatch(left, right, "subtract") : (left as Unit) * (left.Value - right.Value);
-    public static UnitValue operator *(UnitValue l, double right) => l * ((l as Unit) * right);
-    public static UnitValue operator *(double right, UnitValue l) => l * ((l as Unit) * right);
+    public static UnitValue operator -(UnitValue left, UnitValue right) => (left as Unit) * (left.Value - right.Value);
+    public static UnitValue operator *(double right, UnitValue l) => l * right;
+    public static UnitValue operator *(UnitValue l, double right) => l * (Units.EmptyUnit * right);
     public static UnitValue operator *(UnitValue l, UnitValue r) => UnitCategory.Base.IterateAccumulators()
-        .Select(acc => acc(UnitOperator.Multiply, (l, l), (r, r)))
-        .Where(x => x != null)
-        .Select(x => new UnitValue(x!.Value.unit, x.Value.value))
+        .Select(acc => acc(UnitOperator.Multiply, l, r))
+        .CastOrSkip<UnitValue>()
         .FirstOrDefault()
         .OrDefault();
-    public static UnitValue operator /(UnitValue l, double right) => l / ((l as Unit) * right);
+    public static UnitValue operator /(double right, UnitValue l) => l / right;
+    public static UnitValue operator /(UnitValue l, double right) => l / (Units.EmptyUnit * right);
     public static UnitValue operator /(UnitValue l, UnitValue r) => UnitCategory.Base.IterateAccumulators()
-        .Select(acc => acc(UnitOperator.Divide, (l, l), (r, r)))
-        .Where(x => x != null)
-        .Select(x => new UnitValue(x!.Value.unit, x.Value.value))
+        .Select(acc => acc(UnitOperator.Divide, l, r))
+        .CastOrSkip<UnitValue>()
         .FirstOrDefault()
         .OrDefault();
 
     public static UnitValue operator |(UnitValue value, SiPrefix prefix)
         => new(value as Unit | prefix, value.SiPrefix.ConvertTo(prefix, value.Value, value.Base));
+
+    public static bool operator ==(UnitValue? left, UnitValue? right) => Equals(null, left) && Equals(null, right) || left == right && left!.Value == right!.Value;
+    public static bool operator !=(UnitValue? left, UnitValue? right) => !(left == right);
 
     public static implicit operator double(UnitValue value) => value.SiPrefix.ConvertTo(SiPrefix.One, value.Value, value.Base);
 
