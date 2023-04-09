@@ -36,8 +36,8 @@ public static class Units
         
         Distance = new UnitCategory("distance", Physics);
         Meter = new Unit(Distance, "m") { Name = "Meter" };
-        LightSecond = new Unit(Distance, "ls") { Name = "LightSecond", Strategy = { FactorUnit(2.998e+8, Meter) } };
-        LightYear = new Unit(Distance, "ly") { Name = "LightYear", Strategy = { FactorUnit(3.156e+7, LightSecond) } };
+        LightSecond = new Unit(Distance, "Ls") { Name = "LightSecond", Strategy = { FactorUnit(2.998e+8, Meter) } };
+        LightYear = new Unit(Distance, "Ly") { Name = "LightYear", Strategy = { FactorUnit(3.156e+7, LightSecond) } };
 
         Electrical = new UnitCategory("electrical", Physics);
         Volts = new Unit(Electrical, "V") { Name = "Volt" };
