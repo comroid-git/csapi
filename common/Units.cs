@@ -42,7 +42,7 @@ public static class Units
         Volts = new Unit(Electrical, "V") { Name = "Volt" };
         Ampere = new Unit(Electrical, "A") { Name = "Ampere" };
         Watts = new Unit(Electrical, "W") { Name = "Watt", Strategy = { ResultOf(Volts, UnitOperator.Multiply, Ampere) } };
-        Ohm = new Unit(Electrical, "O") { Name = "Ohm", Strategy = { ResultOf(Volts, UnitOperator.Divide, Ampere) } };
+        Ohm = new Unit(Electrical, "Oh") { Name = "Ohm", Strategy = { ResultOf(Volts, UnitOperator.Divide, Ampere) } };
         Coulomb = new Unit(Electrical, "C") { Name = "Coulomb" };
         Farad = new Unit(Electrical, "F") { Name = "Farad", Strategy = { ResultOf(Coulomb, UnitOperator.Divide, Volts) } };
         Henry = new Unit(Electrical, "He") { Name = "Henry", Strategy = { ResultOf(Ohm, UnitOperator.Multiply, Seconds) } };
