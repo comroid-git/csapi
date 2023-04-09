@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics.Metrics;
 using System.Linq;
 
 namespace comroid.common;
@@ -21,12 +20,12 @@ public static class Units
         // predefined units
         Time = new UnitCategory("time");
         Seconds = new Unit(Time, "s") { Name = "Seconds" };
-        Minutes = new Unit(Time, "min") { Name = "Minutes", Strategy = { FactorUnit(60, Seconds) } };
-        Hours = new Unit(Time, "h") { Name = "Hours", Strategy = { FactorUnit(60, Minutes) } };
-        Days = new Unit(Time, "d") { Name = "Days", Strategy = { FactorUnit(24, Hours) } };
-        Weeks = new Unit(Time, "w") { Name = "Weeks", Strategy = { FactorUnit(7, Days) } };
+        Minutes = new Unit(Time, "min") { Name = "Minutes", Strategies = { FactorUnit(60, Seconds) } };
+        Hours = new Unit(Time, "h") { Name = "Hours", Strategies = { FactorUnit(60, Minutes) } };
+        Days = new Unit(Time, "d") { Name = "Days", Strategies = { FactorUnit(24, Hours) } };
+        Weeks = new Unit(Time, "w") { Name = "Weeks", Strategies = { FactorUnit(7, Days) } };
         Months = new Unit(Time, "mo") { Name = "Months" };
-        Years = new Unit(Time, "y") { Name = "Years", Strategy = { FactorUnit(12, Months) } };
+        Years = new Unit(Time, "y") { Name = "Years", Strategies = { FactorUnit(12, Months) } };
 
         Programming = new UnitCategory("programming");
         Bytes = new Unit(Programming, "B") { Name = "Byte", Base = 8 };
@@ -36,17 +35,17 @@ public static class Units
         
         Distance = new UnitCategory("distance", Physics);
         Meter = new Unit(Distance, "m") { Name = "Meter" };
-        LightSecond = new Unit(Distance, "Ls") { Name = "LightSecond", Strategy = { FactorUnit(2.998e+8, Meter) } };
-        LightYear = new Unit(Distance, "Ly") { Name = "LightYear", Strategy = { FactorUnit(3.156e+7, LightSecond) } };
+        LightSecond = new Unit(Distance, "Ls") { Name = "LightSecond", Strategies = { FactorUnit(2.998e+8, Meter) } };
+        LightYear = new Unit(Distance, "Ly") { Name = "LightYear", Strategies = { FactorUnit(3.156e+7, LightSecond) } };
 
         Electrical = new UnitCategory("electrical", Physics);
         Volts = new Unit(Electrical, "V") { Name = "Volt" };
         Ampere = new Unit(Electrical, "A") { Name = "Ampere" };
-        Watts = new Unit(Electrical, "W") { Name = "Watt", Strategy = { ResultOf(Volts, UnitOperator.Multiply, Ampere) } };
-        Ohm = new Unit(Electrical, "Oh") { Name = "Ohm", Strategy = { ResultOf(Volts, UnitOperator.Divide, Ampere) } };
+        Watts = new Unit(Electrical, "W") { Name = "Watt", Strategies = { ResultOf(Volts, UnitOperator.Multiply, Ampere) } };
+        Ohm = new Unit(Electrical, "Oh") { Name = "Ohm", Strategies = { ResultOf(Volts, UnitOperator.Divide, Ampere) } };
         Coulomb = new Unit(Electrical, "C") { Name = "Coulomb" };
-        Farad = new Unit(Electrical, "F") { Name = "Farad", Strategy = { ResultOf(Coulomb, UnitOperator.Divide, Volts) } };
-        Henry = new Unit(Electrical, "He") { Name = "Henry", Strategy = { ResultOf(Ohm, UnitOperator.Multiply, Seconds) } };
+        Farad = new Unit(Electrical, "F") { Name = "Farad", Strategies = { ResultOf(Coulomb, UnitOperator.Divide, Volts) } };
+        Henry = new Unit(Electrical, "He") { Name = "Henry", Strategies = { ResultOf(Ohm, UnitOperator.Multiply, Seconds) } };
     }
 
     #region Constants
@@ -96,27 +95,22 @@ public static class Units
     public static UnitValue Parse(string str) => UnitCategory.Base.ParseValue(str);
     public static Unit ParseUnit(string str) => UnitCategory.Base.ParseUnit(str);
 
-    public static UnitAccumulatorStrategy ResultOf(Unit lhs, UnitOperator op, Unit rhs)
-        => output => new[]
-        {
-            CreateAccumulator_CombinationUnit(lhs, op, rhs, output),
-            CreateAccumulator_CombinationUnit(output, op.Inverse(), lhs, rhs),
-            CreateAccumulator_CombinationUnit(output, op.Inverse(), rhs, lhs)
-        };
-    public static UnitAccumulator CreateAccumulator_CombinationUnit(Unit lhs, UnitOperator _op, Unit rhs, Unit output)
+    public static double FindFactor(Unit from, Unit to)
     {
-        UnitValue? Accumulate(UnitOperator op, UnitValue l, UnitValue r) => op == _op && lhs == l && rhs == r ? new UnitValue(output, op.Apply(l, r)) : null;
-        return _op == UnitOperator.Multiply ? WrapAccumulator_BiDirectional(Accumulate, false) : Accumulate;
+        foreach (var strategy in UnitCategory.Base.IterateRelatedStrategies(true, from, to))
+            if (strategy is FactorUnitStrategy fus)
+            {
+                if (to == fus.output)
+                    return fus.factor;
+                if (from == fus.output)
+                    return 1 / fus.factor;
+                //todo: this is wrong; does not consider multi-stage factors (eg for days->hours->minutes it just does days->hours)
+            }
+        return 1; // no strategies found
     }
 
-    public static UnitAccumulatorStrategy FactorUnit(double factor, Unit output)
-        => input => new[] { CreateAccumulator_FactorUnit(UnitOperator.Multiply, input, factor, output) };
-    public static UnitAccumulator CreateAccumulator_FactorUnit(UnitOperator _op, Unit lhs, double factor, Unit output)
-        => WrapAccumulator_BiDirectional((op, l, r)
-            => op == _op && l == lhs && r == factor ? new UnitValue(output, op.Apply(l, factor)) : null);
-
-    public static UnitAccumulator WrapAccumulator_BiDirectional(UnitAccumulator wrap, bool opInverse = true)
-        => (op, l, r) => wrap(op, l, r) ?? wrap(opInverse ? op.Inverse() : op, r, l);
+    public static UnitAccumulatorStrategy ResultOf(Unit lhs, UnitOperator op, Unit rhs) => new CombinationUnitStrategy(op, lhs, rhs);
+    public static UnitAccumulatorStrategy FactorUnit(double factor, Unit output) => new FactorUnitStrategy(UnitOperator.Multiply, factor, output);
 
     #endregion
 
@@ -211,17 +205,127 @@ public sealed class UnitCategory : List<Unit>
     internal IEnumerable<UnitAccumulator> IterateAccumulators(bool recursive = true)
     {
         foreach (var unit in IterateUnits(recursive))
-        foreach (var strategy in unit.Strategy)
-        foreach (var accumulator in strategy(unit))
+        foreach (var strategy in unit.Strategies)
+        foreach (var accumulator in strategy.CreateAccumulators(unit))
             yield return accumulator;
+    }
+    internal IEnumerable<UnitAccumulatorStrategy> IterateRelatedStrategies(bool recursive = true, params Unit[] related)
+    {
+        foreach (var unit in IterateUnits(recursive))
+        foreach (var strategy in unit.Strategies)
+            if (related.Any(unit.Equals) || related.Any(strategy.IsUnitRelated))
+                yield return strategy;
     }
 
     public override string ToString() => FullName;
 }
 
-public delegate IEnumerable<UnitAccumulator> UnitAccumulatorStrategy(Unit unit);
+#region Strategies
 
-public delegate UnitValue? UnitAccumulator(UnitOperator op, UnitValue lhs, UnitValue rhs);
+public abstract class UnitAccumulatorStrategy
+{
+    public abstract bool IsUnitRelated(Unit arg);
+    public abstract IEnumerable<UnitAccumulator> CreateAccumulators(Unit unit);
+}
+
+public class FactorUnitStrategy : UnitAccumulatorStrategy
+{
+    private readonly UnitOperator _op;
+    internal readonly double factor;
+    internal readonly Unit output;
+    
+    public FactorUnitStrategy(UnitOperator op, double factor, Unit output)
+    {
+        _op = op;
+        this.factor = factor;
+        this.output = output;
+    }
+
+    public override bool IsUnitRelated(Unit arg) => output == arg;
+    public override IEnumerable<UnitAccumulator> CreateAccumulators(Unit input)
+    {
+        yield return new FactorUnitAccumulator(_op, input, factor, output);
+    }
+}
+
+public class CombinationUnitStrategy : UnitAccumulatorStrategy
+{
+    private readonly UnitOperator _op;
+    private readonly Unit _lhs;
+    private readonly Unit _rhs;
+    
+    public CombinationUnitStrategy(UnitOperator op, Unit lhs, Unit rhs)
+    {
+        _op = op;
+        _lhs = lhs;
+        _rhs = rhs;
+    }
+
+    public override bool IsUnitRelated(Unit arg) => _lhs == arg || _rhs == arg;
+    public override IEnumerable<UnitAccumulator> CreateAccumulators(Unit unit)
+    {
+        yield return new CombinationUnitAccumulator(_op, _lhs, _rhs, unit) { OpInverse = false };
+        yield return new CombinationUnitAccumulator(_op.Inverse(), _lhs, unit, _rhs) { OpInverse = false };
+        yield return new CombinationUnitAccumulator(_op.Inverse(), _rhs, unit, _lhs) { OpInverse = false };
+    }
+}
+
+public abstract class UnitAccumulator
+{
+    public bool BiDirectional { get; init; } = true;
+    public bool OpInverse { get; init; } = true;
+    
+    public IEnumerable<UnitValue> Apply(UnitOperator op, UnitValue lhs, UnitValue rhs)
+    {
+        if (Accepts(op, lhs, rhs))
+            yield return Accumulate(op, lhs, rhs);
+        if (BiDirectional && Accepts(OpInverse ? op.Inverse() : op, rhs, lhs))
+            yield return Accumulate(OpInverse ? op.Inverse() : op, rhs, lhs);
+    }
+    
+    public abstract bool Accepts(UnitOperator op, UnitValue lhs, UnitValue rhs);
+    public abstract UnitValue Accumulate(UnitOperator op, UnitValue lhs, UnitValue rhs);
+}
+
+public class FactorUnitAccumulator : UnitAccumulator
+{
+    private readonly UnitOperator _op;
+    private readonly Unit _lhs;
+    private readonly double _factor;
+    private readonly Unit _output;
+    
+    public FactorUnitAccumulator(UnitOperator op, Unit lhs, double factor, Unit output)
+    {
+        _op = op;
+        _lhs = lhs;
+        _factor = factor;
+        _output = output;
+    }
+
+    public override bool Accepts(UnitOperator op, UnitValue lhs, UnitValue rhs) => op == _op && lhs == _lhs && rhs == _factor;
+    public override UnitValue Accumulate(UnitOperator op, UnitValue lhs, UnitValue rhs) => new(_output, op.Apply(lhs, _factor));
+}
+
+public class CombinationUnitAccumulator : UnitAccumulator
+{
+    private readonly UnitOperator _op;
+    private readonly Unit _lhs;
+    private readonly Unit _rhs;
+    private readonly Unit _output;
+    
+    public CombinationUnitAccumulator(UnitOperator op, Unit lhs, Unit rhs, Unit output)
+    {
+        _op = op;
+        _lhs = lhs;
+        _rhs = rhs;
+        _output = output;
+    }
+    
+    public override bool Accepts(UnitOperator op, UnitValue lhs, UnitValue rhs) => op == _op && lhs == _lhs && rhs == _rhs;
+    public override UnitValue Accumulate(UnitOperator op, UnitValue lhs, UnitValue rhs) => new(_output, op.Apply(lhs, rhs));
+}
+
+#endregion
 
 public enum UnitOperator
 {
@@ -259,7 +363,7 @@ public class Unit
     }
 
     public int Base { get; init; } = 10;
-    public List<UnitAccumulatorStrategy> Strategy { get; init; } = new();
+    public List<UnitAccumulatorStrategy> Strategies { get; init; } = new();
 
     public static UnitValue operator *(Unit left, double right) => new(left, right);
     public static UnitValue operator *(double right, Unit left) => new(left, right);
@@ -351,19 +455,21 @@ public class UnitValue : UnitInstance
     public static UnitValue operator -(UnitValue left, UnitValue right) => (left as Unit) * (left.Value - right.Value);
     public static UnitValue operator *(double right, UnitValue l) => l * right;
     public static UnitValue operator *(UnitValue l, double right) => l * (Units.EmptyUnit * right);
-    public static UnitValue operator *(UnitValue l, UnitValue r) => UnitCategory.Base.IterateAccumulators()
-        .Select(acc => acc(UnitOperator.Multiply, l, r))
-        .CastOrSkip<UnitValue>()
-        .FirstOrDefault() ?? new UnitValue(new CombinationUnit(l, r), (double)l * (double)r);
+    public static UnitValue operator *(UnitValue l, UnitValue r)
+        => RunAccumulators(UnitOperator.Multiply, l, r) ?? new UnitValue(new CombinationUnit(l, r), (double)l * (double)r);
     public static UnitValue operator /(double right, UnitValue l) => l / right;
     public static UnitValue operator /(UnitValue l, double right) => l / (Units.EmptyUnit * right);
-    public static UnitValue operator /(UnitValue l, UnitValue r) => UnitCategory.Base.IterateAccumulators()
-        .Select(acc => acc(UnitOperator.Divide, l, r))
+    public static UnitValue operator /(UnitValue l, UnitValue r)
+        => RunAccumulators(UnitOperator.Divide, l, r) ?? CombinationUnit.Strip(l, r, (double)l / (double)r) ?? Units.EmptyValue;
+    private static UnitValue? RunAccumulators(UnitOperator op, UnitValue l, UnitValue r) => UnitCategory.Base.IterateAccumulators()
+        .SelectMany(acc => acc.Apply(op, l, r))
         .CastOrSkip<UnitValue>()
-        .FirstOrDefault() ?? CombinationUnit.Strip(l, r, (double)l / (double)r) ?? Units.EmptyValue;
+        .FirstOrDefault(); 
 
     public static UnitValue operator |(UnitValue value, SiPrefix prefix)
         => new(value as Unit | prefix, value.SiPrefix.ConvertTo(prefix, value.Value, value.Base));
+    public static UnitValue operator |(UnitValue value, Unit unit)
+        => new(unit, (double)value * Units.FindFactor(value, unit));
 
     public static bool operator ==(UnitValue? left, UnitValue? right) => Equals(null, left) && Equals(null, right) || left as Unit == right && left!.Value == right!.Value;
     public static bool operator !=(UnitValue? left, UnitValue? right) => !(left == right);
