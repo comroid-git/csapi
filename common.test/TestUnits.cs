@@ -29,7 +29,7 @@ public class TestUnits
     public void TestFactorUnit()
     {
         var input = 2 * Units.Days;
-        var output = input * 24;
+        var output = input * (double)24;
 
         Assert.That((double)output, Is.EqualTo(2 * 24));
         Assert.That(output.ToString(), Is.EqualTo($"{2 * 24}h"));
