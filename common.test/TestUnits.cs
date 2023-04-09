@@ -26,13 +26,23 @@ public class TestUnits
     }
 
     [Test]
-    public void TestFactorUnit()
+    public void TestFactorUnit_1()
     {
         var input = 2 * Units.Days;
         var output = input * (double)24;
 
         Assert.That((double)output, Is.EqualTo(2 * 24));
         Assert.That(output.ToString(), Is.EqualTo($"{2 * 24}h"));
+    }
+
+    [Test]
+    public void TestFactorUnit_2()
+    {
+        var input = 1 * Units.LightYear;
+        var output = input | Units.LightSecond;
+
+        Assert.That((double)output, Is.EqualTo(31557385.23).Within(1e-3));
+        Assert.That(output.ToString(), Is.EqualTo($"{31557385.23:0.###}Ls"));
     }
 
     [Test]
