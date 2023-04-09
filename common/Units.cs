@@ -13,7 +13,8 @@ public static class Units
         // constants
         SiPrefixes = typeof(SiPrefix).GetEnumValues()
             .Cast<SiPrefix>()
-            .ToImmutableSortedDictionary(si => si.ToString() == "None" ? string.Empty : si.ToString(), si => si);
+            .OrderBy(si => (int)si)
+            .ToImmutableDictionary(si => si.ToString(), si => si);
         EmptyUnit = new UnitInstance(new Unit(UnitCategory.Base, string.Empty), SiPrefix.One);
         EmptyValue = new UnitValue(EmptyUnit, default);
 
