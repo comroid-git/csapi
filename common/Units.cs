@@ -377,6 +377,9 @@ public class UnitValue : UnitInstance
         return new UnitValue(new UnitInstance(this, SiPrefix.One), value);
     }
 
+    public override bool Equals(object? obj) => obj is Unit u && u == this;
+    public override int GetHashCode() => ToString().GetHashCode();
+
     public override string ToString()
         => $"{Value:0.###}{(SiPrefix == SiPrefix.One ? string.Empty : SiPrefix.ToString())}{Identifier}";
 }
