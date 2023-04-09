@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.Metrics;
 using System.Linq;
 
 namespace comroid.common;
@@ -29,11 +30,22 @@ public static class Units
         Programming = new UnitCategory("programming");
         Bytes = new Unit(Programming, "B") { Name = "Byte", Base = 8 };
 
-        Electrical = new UnitCategory("electrical");
+        Physics = new UnitCategory("physics");
+        Hertz = new Unit(Physics, "Hz");
+        
+        Distance = new UnitCategory("distance", Physics);
+        Meter = new Unit(Distance, "m") { Name = "Meter" };
+        LightSecond = new Unit(Distance, "ls") { Name = "LightSecond", Strategy = { FactorUnit(2.998e+8, Meter) } };
+        LightYear = new Unit(Distance, "ly") { Name = "LightYear", Strategy = { FactorUnit(3.156e+7, LightSecond) } };
+
+        Electrical = new UnitCategory("electrical", Physics);
         Volts = new Unit(Electrical, "V") { Name = "Volt" };
         Ampere = new Unit(Electrical, "A") { Name = "Ampere" };
         Watts = new Unit(Electrical, "W") { Name = "Watt", Strategy = { ResultOf(Volts, UnitOperator.Multiply, Ampere) } };
         Ohm = new Unit(Electrical, "O") { Name = "Ohm", Strategy = { ResultOf(Volts, UnitOperator.Divide, Ampere) } };
+        Coulomb = new Unit(Electrical, "C") { Name = "Coulomb" };
+        Farad = new Unit(Electrical, "F") { Name = "Farad", Strategy = { ResultOf(Coulomb, UnitOperator.Divide, Volts) } };
+        Henry = new Unit(Electrical, "He") { Name = "Henry", Strategy = { ResultOf(Ohm, UnitOperator.Multiply, Seconds) } };
     }
 
     #region Constants
@@ -45,7 +57,7 @@ public static class Units
     #endregion
 
     #region Predefined Units
-
+    
     public static readonly UnitCategory Time;
     public static readonly Unit Years;
     public static readonly Unit Months;
@@ -58,11 +70,23 @@ public static class Units
     public static readonly UnitCategory Programming;
     public static readonly Unit Bytes;
 
+    public static readonly UnitCategory Physics;
+    /* todo: support deliberately many units except imperial units */
+    public static readonly Unit Hertz;
+
+    public static readonly UnitCategory Distance;
+    public static readonly Unit Meter;
+    public static readonly Unit LightSecond;
+    public static readonly Unit LightYear;
+    
     public static readonly UnitCategory Electrical;
     public static readonly Unit Volts;
     public static readonly Unit Ampere;
     public static readonly Unit Watts;
     public static readonly Unit Ohm;
+    public static readonly Unit Coulomb;
+    public static readonly Unit Farad;
+    public static readonly Unit Henry;
 
     #endregion
 
