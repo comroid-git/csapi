@@ -103,7 +103,7 @@ public static class Units
     internal static UnitValue OrDefault(this UnitValue? it) => it ?? EmptyValue;
 
     public static double ConvertTo(this SiPrefix from, SiPrefix to, double value, int @base)
-        => from == to ? value : value * Math.Pow(@base, Math.Max(1, from - to)) * Math.Max(1, /*todo: this is wrong but works with 8 and 10*/10 - @base);
+        => from == to ? value : value * Math.Pow(@base, from - to) * Math.Max(1, /*todo: this is wrong but works with 8 and 10*/10 - @base);
     public static double Apply(this UnitOperator op, params double[] values) => values.Aggregate((l, r) => op switch
     {
         UnitOperator.Multiply => l * r,
@@ -341,6 +341,22 @@ public class UnitValue : UnitInstance
     public static bool operator !=(UnitValue? left, UnitValue? right) => !(left == right);
 
     public static implicit operator double(UnitValue value) => value.SiPrefix.ConvertTo(SiPrefix.One, value.Value, value.Base);
+    
+    public UnitValue Normalize()
+    {
+        double value = this.Value;
+        var prefixes = Units.SiPrefixes.Values.OrderBy(si => (int)si).ToArray();
+        for (var i = 0; i < prefixes.Length; i++)
+        {
+            var si = prefixes[i];
+            var next = i + 1 < prefixes.Length ? prefixes[i + 1] : (SiPrefix?)null;
+
+            if (next != null && value >= Math.Pow(Base, (int)si) && value < Math.Pow(Base, (int)next))
+                return new UnitValue(new UnitInstance(this, si), SiPrefix.ConvertTo(si, value, Base));
+        }
+
+        return new UnitValue(new UnitInstance(this, SiPrefix.One), value);
+    }
 
     public override string ToString()
         => $"{Value:0.###}{(SiPrefix == SiPrefix.One ? string.Empty : SiPrefix.ToString())}{Identifier}";

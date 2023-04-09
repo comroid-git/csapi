@@ -34,4 +34,16 @@ public class TestUnits
         Assert.That((double)output, Is.EqualTo(2 * 24));
         Assert.That(output.ToString(), Is.EqualTo($"{2 * 24}h"));
     }
+
+    [Test]
+    public void TestResultUnit()
+    {
+        var i = 16 * Units.Ampere;
+        var u = 230 * Units.Volts;
+        var output = i * u;
+
+        Assert.That((double)output, Is.EqualTo(16 * 230));
+        Assert.That(output.ToString(), Is.EqualTo("3680W"));
+        Assert.That(output.Normalize().ToString(), Is.EqualTo($"{3.68}kW"));
+    }
 }
