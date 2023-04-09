@@ -34,6 +34,7 @@ public static class LinqUtil
     public static IEnumerable<R> CastOrSkip<R>(this IEnumerable input)
     {
         foreach (var it in input)
-            if (it is R) yield return (R)it;
+            if (it is R r)
+                yield return r;
     }
 }
