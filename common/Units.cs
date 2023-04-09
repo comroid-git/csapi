@@ -358,7 +358,8 @@ public class UnitValue : UnitInstance
     public static bool operator ==(UnitValue? left, UnitValue? right) => Equals(null, left) && Equals(null, right) || left as Unit == right && left!.Value == right!.Value;
     public static bool operator !=(UnitValue? left, UnitValue? right) => !(left == right);
 
-    public static implicit operator double(UnitValue value) => value.SiPrefix.ConvertTo(SiPrefix.One, value.Value, value.Base);
+    public static implicit operator double(UnitValue? value) => value?.SiPrefix.ConvertTo(SiPrefix.One, value.Value, value.Base) ?? default;
+    public static implicit operator UnitValue(double? value) => value != null ? Units.EmptyUnit * value.Value : Units.EmptyValue;
 
     public UnitValue Normalize()
     {
