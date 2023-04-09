@@ -335,7 +335,7 @@ public class UnitValue : UnitInstance
     public static UnitValue operator |(UnitValue value, SiPrefix prefix)
         => new(value as Unit | prefix, value.SiPrefix.ConvertTo(prefix, value.Value, value.Base));
 
-    public static bool operator ==(UnitValue? left, UnitValue? right) => Equals(null, left) && Equals(null, right) || left == right && left!.Value == right!.Value;
+    public static bool operator ==(UnitValue? left, UnitValue? right) => Equals(null, left) && Equals(null, right) || left as Unit == right && left!.Value == right!.Value;
     public static bool operator !=(UnitValue? left, UnitValue? right) => !(left == right);
 
     public static implicit operator double(UnitValue value) => value.SiPrefix.ConvertTo(SiPrefix.One, value.Value, value.Base);
