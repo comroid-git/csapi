@@ -262,8 +262,8 @@ public class Unit
 
     public static UnitValue operator *(Unit left, double right) => new(left, right);
     public static UnitValue operator *(double right, Unit left) => new(left, right);
-    public static UnitValue operator *(Unit left, SiPrefix right) => new(left, Math.Pow(left.Base, (int)right));
-    public static UnitValue operator *(SiPrefix right, Unit left) => new(left, Math.Pow(left.Base, (int)right));
+    public static UnitValue operator *(SiPrefix right, Unit left) => left * right;
+    public static UnitValue operator *(Unit left, SiPrefix right) => new(left, (left is UnitValue v ? (double)v : 1) * Math.Pow(left.Base, (int)right));
     public static Unit operator *(Unit left, Unit right) => new CombinationUnit(left, right);
     public static Unit operator /(Unit left, Unit right) => left is CombinationUnit cu ? cu / right : throw new ArgumentException("Cannot remove unit from " + left.GetType().Name);
     public static bool operator ==(Unit? left, Unit? right) => Equals(null, left) && Equals(null, right) || left?.Name == right?.Name;
