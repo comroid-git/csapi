@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.Linq;
 
 namespace comroid.common;
@@ -198,6 +197,7 @@ public sealed class UnitCategory : List<Unit>
 }
 
 public delegate IEnumerable<UnitAccumulator> UnitAccumulatorStrategy(Unit unit);
+
 public delegate UnitValue? UnitAccumulator(UnitOperator op, UnitValue lhs, UnitValue rhs);
 
 public enum UnitOperator
@@ -339,10 +339,10 @@ public class UnitValue : UnitInstance
     public static bool operator !=(UnitValue? left, UnitValue? right) => !(left == right);
 
     public static implicit operator double(UnitValue value) => value.SiPrefix.ConvertTo(SiPrefix.One, value.Value, value.Base);
-    
+
     public UnitValue Normalize()
     {
-        double value = this.Value;
+        var value = Value;
         var prefixes = Units.SiPrefixes.Values.OrderBy(si => (int)si).ToArray();
         for (var i = 0; i < prefixes.Length; i++)
         {
