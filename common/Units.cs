@@ -391,11 +391,11 @@ public enum SiPrefix
     n = -9, // Nano
     \u00B5 = -6, // Micro
     m = -3, // Milli
-    c = -2, // Centi
-    d = -1, // Deci
+    //c = -2, // Centi
+    //d = -1, // Deci
     One = 0, // None
-    da = 1, // Deca
-    h = 2, // Hecto
+    //da = 1, // Deca
+    //h = 2, // Hecto
     k = 3, // Kilo
     M = 6, // Mega
     G = 9, // Giga
