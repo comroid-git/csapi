@@ -48,7 +48,7 @@ public class TestUnits
     }
 
     [Test]
-    public void TestCombinationUnit()
+    public void TestCombinationUnit_1()
     {
         var P = 5 * Units.Watts * SiPrefix.k;
         var t = 2 * Units.Hours;
@@ -57,5 +57,15 @@ public class TestUnits
         Assert.That((double)output, Is.EqualTo(5 * 2 * 1000));
         Assert.That((output | SiPrefix.One).ToString(), Is.EqualTo("10000Wh"));
         Assert.That(output.Normalize().ToString(), Is.EqualTo("10kWh"));
+    }
+
+    [Test]
+    public void TestCombinationUnit_2()
+    {
+        var input = 5 * (Units.Watts * Units.Hours);
+        var output = input / (1 * Units.Hours);
+
+        Assert.That((double)output, Is.EqualTo(5));
+        Assert.That((output | SiPrefix.One).ToString(), Is.EqualTo("5W"));
     }
 }

@@ -304,6 +304,15 @@ internal class CombinationUnit : Unit
             return new CombinationUnit(leftoversByIM);
         return leftoversByIM.Length == 1 ? leftoversByIM[0] : left;
     }
+    
+    public static UnitValue? Strip(Unit @base, Unit strip, double value)
+    {
+        @base |= SiPrefix.One;
+        strip |= SiPrefix.One;
+        if (!@base.Identifier.Contains(strip.Identifier))
+            return null;
+        return Units.ParseUnit(@base.Identifier.Replace(strip.Identifier, string.Empty)) * value;
+    }
 }
 
 public class UnitInstance : Unit
@@ -351,7 +360,7 @@ public class UnitValue : UnitInstance
     public static UnitValue operator /(UnitValue l, UnitValue r) => UnitCategory.Base.IterateAccumulators()
         .Select(acc => acc(UnitOperator.Divide, l, r))
         .CastOrSkip<UnitValue>()
-        .FirstOrDefault() ?? new UnitValue(new CombinationUnit(l, r), (double)l * (double)r);
+        .FirstOrDefault() ?? CombinationUnit.Strip(l, r, (double)l / (double)r) ?? Units.EmptyValue;
 
     public static UnitValue operator |(UnitValue value, SiPrefix prefix)
         => new(value as Unit | prefix, value.SiPrefix.ConvertTo(prefix, value.Value, value.Base));
