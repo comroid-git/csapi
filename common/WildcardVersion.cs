@@ -9,8 +9,7 @@ public class WildcardVersion : IComparable, IComparable<Version?>, IEquatable<Ve
     public const int WildcardValue = int.MaxValue;
     public const int UnsetValue = -1;
 
-    public static readonly Regex Pattern =
-        new("(?<major>\\+|\\d+)(\\.(?<minor>\\+|\\d+))?(\\.(?<build>\\+|\\d+))?(\\.(?<rev>\\+|\\d+))?");
+    public static readonly Regex Pattern = new("(?<major>[+*]|\\d+)(\\.(?<minor>[+*]|\\d+))?(\\.(?<build>[+*]|\\d+))?(\\.(?<rev>[+*]|\\d+))?");
 
     public WildcardVersion(string version)
     {
