@@ -6,6 +6,17 @@ namespace common.test;
 public class TestUnits
 {
     [Test]
+    public void TestEmptyParse()
+    {
+        var x = Units.Parse("8");
+        var y = Units.Parse("64");
+        var output = x * y;
+
+        Assert.That((double)output, Is.EqualTo(8 * 64));
+        Assert.That(output.ToString(), Is.EqualTo((8 * 64).ToString()));
+    }
+    
+    [Test]
     public void TestConversion()
     {
         var input = Units.Parse("8kV");
