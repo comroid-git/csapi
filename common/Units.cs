@@ -47,6 +47,7 @@ public static class Units
 
         Physics = new UnitCategory("physics");
         Hertz = new Unit(Physics, "Hz");
+        Joules = new Unit(Physics, "J");
 
         Distance = new UnitCategory("distance", Physics);
         Meter = new Unit(Distance, "m") { Name = "Meter" };
@@ -69,6 +70,11 @@ public static class Units
         Coulomb = new Unit(Electrical, "C") { Name = "Coulomb" };
         Farad = new Unit(Electrical, "F") { Name = "Farad", Strategies = { ResultOf(Coulomb, UnitOperator.Divide, Volts) } };
         Henry = new Unit(Electrical, "He") { Name = "Henry", Strategies = { ResultOf(Ohm, UnitOperator.Multiply, Seconds) } };
+        
+        // complex conversion chains
+        RegisterFactorUnitChain(
+            (Watts * Seconds, 1),
+            (Joules, 1));
     }
 
     #region Constants
@@ -96,6 +102,7 @@ public static class Units
     public static readonly UnitCategory Physics;
     /* todo: support deliberately many units except imperial units */
     public static readonly Unit Hertz;
+    public static readonly Unit Joules;
 
     public static readonly UnitCategory Distance;
     public static readonly Unit Meter;
@@ -192,7 +199,9 @@ public sealed class UnitCategory : List<Unit>
 
     public Unit ParseUnit(string str)
     {
-        var unit = IterateUnits().FirstOrDefault(unit => unit.Identifier == str);
+        bool UnitUsed(Unit unit) => unit.Identifier == str || unit.Name == str;
+
+        var unit = IterateUnits().FirstOrDefault(UnitUsed);
         KeyValuePair<string, SiPrefix>? si = null;
         if (unit == null)
         {
@@ -204,7 +213,7 @@ public sealed class UnitCategory : List<Unit>
             }
         }
 
-        return new UnitInstance(unit ?? IterateUnits().FirstOrDefault(unit => unit.Identifier == str) ?? Units.EmptyUnit, si?.Value ?? SiPrefix.One);
+        return new UnitInstance(unit ?? IterateUnits().FirstOrDefault(UnitUsed) ?? Units.EmptyUnit, si?.Value ?? SiPrefix.One);
     }
 
     public UnitValue ParseValue(string str)
