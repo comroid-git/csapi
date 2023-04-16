@@ -5,13 +5,15 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
-using comroid.common;
 
 namespace comroid.common;
 
 public class DebugWriter : TextWriter
 {
-    public override Encoding Encoding => Encoding.ASCII;
+    public override Encoding Encoding
+    {
+        get => Encoding.ASCII;
+    }
 
     public override void Write(char[] buffer, int index, int count)
         => Debug.Write(new string(buffer)[index..(index + count)]);
@@ -26,11 +28,14 @@ public class MultiWriter : TextWriter
         Writers = writers.ToHashSet();
     }
 
-    public override Encoding Encoding => Writers.Select(x => x.Encoding).First();
+    public override Encoding Encoding
+    {
+        get => Writers.Select(x => x.Encoding).First();
+    }
 
     public override void Write(char[] buffer, int index, int count)
     {
-        foreach (var writer in Writers) 
+        foreach (var writer in Writers)
             writer.Write(buffer, index, count);
     }
 }
@@ -66,17 +71,20 @@ public interface ILog
 
 internal class LogLevelTextWriter : TextWriter
 {
-    private readonly Log log;
-    private readonly LogLevel level;
     private readonly StringBuilder buffer = new();
+    private readonly LogLevel level;
+    private readonly Log log;
 
     public LogLevelTextWriter(Log log, LogLevel level)
     {
         this.log = log;
         this.level = level;
     }
-    
-    public override Encoding Encoding => Encoding.ASCII;
+
+    public override Encoding Encoding
+    {
+        get => Encoding.ASCII;
+    }
 
     public override void Write(char value) => buffer.Append(value);
 
@@ -100,10 +108,10 @@ public class Log : ILog
     public static readonly Log Root = new("Root");
     public static readonly Log Debug = new(Root, typeof(Debug), "Debug") { Writer = new DebugWriter() };
     private readonly ILog? _parent;
-    private bool? _fullNames = null;
+    private bool? _fullNames;
     private LogLevel? _level = UnsetLevel;
-    private string? _name = null;
-    private TextWriter? _writer = null;
+    private string? _name;
+    private TextWriter? _writer;
 
     public Log() : this(null!)
     {
@@ -152,15 +160,9 @@ public class Log : ILog
 
     public TextWriter CreateWriter(LogLevel level) => new LogLevelTextWriter(this, level);
 
-    public object? At(LogLevel level, object? message, Func<object, object?>? fallback = null, bool error = false)
-    {
-        return _Log(level, message, fallback, error);
-    }
+    public object? At(LogLevel level, object? message, Func<object, object?>? fallback = null, bool error = false) => _Log(level, message, fallback, error);
 
-    public R? At<R>(LogLevel level, object? message, Func<object, R?>? fallback = null, bool error = false)
-    {
-        return _Log(level, message, fallback, error);
-    }
+    public R? At<R>(LogLevel level, object? message, Func<object, R?>? fallback = null, bool error = false) => _Log(level, message, fallback, error);
 
     private R? _Log<R>(LogLevel level, object? message, Func<object, R?>? fallback, bool error)
     {
@@ -209,10 +211,7 @@ public class Log : ILog
         return str;
     }
 
-    private string _PE(Exception e, LogLevel exceptionLevel, bool? printException)
-    {
-        return printException ?? exceptionLevel <= LogLevel.Error ? "\r\n" + e : string.Empty;
-    }
+    private string _PE(Exception e, LogLevel exceptionLevel, bool? printException) => printException ?? exceptionLevel <= LogLevel.Error ? "\r\n" + e : string.Empty;
 
     public Func<Exception, object?> ExceptionLogger(object? message = null,
         LogLevel exceptionLevel = LogLevel.Fatal, Func<object, object?>? fallback = null,
@@ -254,7 +253,7 @@ public class Log : ILog
         LogLevel exceptionLevel = LogLevel.Fatal,
         bool? printException = null)
     {
-        return (t) =>
+        return t =>
         {
             try
             {
@@ -313,19 +312,12 @@ public class Log : ILog
     public object? RunWithExceptionLogger(Func<object?> action, string? message = null,
         Func<object, object?>? fallback = null,
         LogLevel exceptionLevel = LogLevel.Fatal,
-        bool? printException = null)
-    {
-        return WrapWithExceptionLogger(action, message, exceptionLevel, fallback, printException)();
-    }
+        bool? printException = null) => WrapWithExceptionLogger(action, message, exceptionLevel, fallback, printException)();
 
     public R? RunWithExceptionLogger<R>(Func<R?> action, string? message = null,
         Func<object, R?>? fallback = null,
         LogLevel exceptionLevel = LogLevel.Fatal,
-        bool? printException = null)
-
-    {
-        return WrapWithExceptionLogger(action, message, exceptionLevel, fallback, printException)();
-    }
+        bool? printException = null) => WrapWithExceptionLogger(action, message, exceptionLevel, fallback, printException)();
 
     #endregion
 }
@@ -340,18 +332,15 @@ public class Log<T> : Log where T : class
     {
     }
 
-    public override string Name => FullNames ? Type.FullName! : Type.Name;
+    public override string Name
+    {
+        get => FullNames ? Type.FullName! : Type.Name;
+    }
 
     public new static object? At(LogLevel level, object message, Func<object, object?>? fallback = null,
-        bool error = false)
-    {
-        return ((Log)Get()).At(level, message, fallback, error);
-    }
+        bool error = false) => ((Log)Get()).At(level, message, fallback, error);
 
-    public new static R? At<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false)
-    {
-        return ((Log)Get()).At(level, message, fallback, error);
-    }
+    public new static R? At<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false) => ((Log)Get()).At(level, message, fallback, error);
 
     public static Log<T> Get()
     {

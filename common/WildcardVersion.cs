@@ -37,15 +37,21 @@ public class WildcardVersion : IComparable, IComparable<Version?>, IEquatable<Ve
         Major = major;
         Minor = minor;
         Build = build;
-        Revision = (majorRevision << 16) | (ushort)minorRevision;
+        Revision = majorRevision << 16 | (ushort)minorRevision;
     }
 
     public int Major { get; }
     public int Minor { get; }
     public int Build { get; }
     public int Revision { get; }
-    public short MajorRevision => (short)(Revision >> 16);
-    public short MinorRevision => (short)(Revision & 0xFFFF);
+    public short MajorRevision
+    {
+        get => (short)(Revision >> 16);
+    }
+    public short MinorRevision
+    {
+        get => (short)(Revision & 0xFFFF);
+    }
 
     public override string ToString()
     {
@@ -59,51 +65,27 @@ public class WildcardVersion : IComparable, IComparable<Version?>, IEquatable<Ve
 
     #region Utility Methods
 
-    private int? FromWildcard(Match match, string group)
-    {
-        return !match.Groups.ContainsKey(group) ? null :
-            match.Groups[group].Value == "+" || string.IsNullOrEmpty(match.Groups[group].Value) ? WildcardValue :
-            int.Parse(match.Groups[group].Value);
-    }
+    private int? FromWildcard(Match match, string group) => !match.Groups.ContainsKey(group) ? null :
+        match.Groups[group].Value == "+" || string.IsNullOrEmpty(match.Groups[group].Value) ? WildcardValue :
+        int.Parse(match.Groups[group].Value);
 
-    private string IntoWildcard(int value)
-    {
-        return (value == WildcardValue ? Wildcard : value).ToString();
-    }
+    private string IntoWildcard(int value) => (value == WildcardValue ? Wildcard : value).ToString();
 
-    public static implicit operator Version?(WildcardVersion? ver)
-    {
-        return ver == null ? null : new(ver.Major, ver.Minor, ver.Build, ver.Revision);
-    }
+    public static implicit operator Version?(WildcardVersion? ver) => ver == null ? null : new(ver.Major, ver.Minor, ver.Build, ver.Revision);
 
-    public static implicit operator WildcardVersion?(Version? ver)
-    {
-        return ver == null ? null : new(ver.Major, ver.Minor, ver.Build, ver.Revision);
-    }
+    public static implicit operator WildcardVersion?(Version? ver) => ver == null ? null : new(ver.Major, ver.Minor, ver.Build, ver.Revision);
 
     #endregion
 
     #region Comparison
 
-    public override bool Equals(object? obj)
-    {
-        return (obj as Version)?.Equals(this) ?? false;
-    }
+    public override bool Equals(object? obj) => (obj as Version)?.Equals(this) ?? false;
 
-    public bool Equals(Version? other)
-    {
-        return Major == other?.Major && Minor == other.Minor && Build == other.Build && Revision == other.Revision;
-    }
+    public bool Equals(Version? other) => Major == other?.Major && Minor == other.Minor && Build == other.Build && Revision == other.Revision;
 
-    public override int GetHashCode()
-    {
-        return ToString().GetHashCode();
-    }
+    public override int GetHashCode() => ToString().GetHashCode();
 
-    public int CompareTo(object? obj)
-    {
-        return -1 * (obj as Version)?.CompareTo(this) ?? 1;
-    }
+    public int CompareTo(object? obj) => -1 * (obj as Version)?.CompareTo(this) ?? 1;
 
     public int CompareTo(Version? other)
     {
@@ -116,35 +98,17 @@ public class WildcardVersion : IComparable, IComparable<Version?>, IEquatable<Ve
         return 0;
     }
 
-    public static bool operator ==(WildcardVersion? l, Version? r)
-    {
-        return l?.Equals(r) ?? Equals(r, null);
-    }
+    public static bool operator ==(WildcardVersion? l, Version? r) => l?.Equals(r) ?? Equals(r, null);
 
-    public static bool operator !=(WildcardVersion? l, Version? r)
-    {
-        return !(l == r);
-    }
+    public static bool operator !=(WildcardVersion? l, Version? r) => !(l == r);
 
-    public static bool operator >(WildcardVersion? l, Version? r)
-    {
-        return (l?.CompareTo(r) ?? -1) > 0;
-    }
+    public static bool operator >(WildcardVersion? l, Version? r) => (l?.CompareTo(r) ?? -1) > 0;
 
-    public static bool operator <(WildcardVersion? l, Version? r)
-    {
-        return r > l;
-    }
+    public static bool operator <(WildcardVersion? l, Version? r) => r > l;
 
-    public static bool operator >=(WildcardVersion? l, Version? r)
-    {
-        return l?.Major == r?.Major && l > r;
-    }
+    public static bool operator >=(WildcardVersion? l, Version? r) => l?.Major == r?.Major && l > r;
 
-    public static bool operator <=(WildcardVersion? l, Version? r)
-    {
-        return r >= l;
-    }
+    public static bool operator <=(WildcardVersion? l, Version? r) => r >= l;
 
     #endregion
 }

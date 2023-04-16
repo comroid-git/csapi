@@ -18,15 +18,9 @@ public class ConfigBase : IEnumerable<KeyValuePair<string, object?>>
         set => Entries[key].Value = value;
     }
 
-    public IEnumerator<KeyValuePair<string, object?>> GetEnumerator()
-    {
-        return ToDict().GetEnumerator();
-    }
+    public IEnumerator<KeyValuePair<string, object?>> GetEnumerator() => ToDict().GetEnumerator();
 
-    IEnumerator IEnumerable.GetEnumerator()
-    {
-        return GetEnumerator();
-    }
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public void Add<T>(string key,
         Func<string, T?>? inputConverter = null,
@@ -41,15 +35,9 @@ public class ConfigBase : IEnumerable<KeyValuePair<string, object?>>
         Entries[key]?.Set(value);
     }
 
-    public string Get(string key)
-    {
-        return Entries[key].ConvertOutput();
-    }
+    public string Get(string key) => Entries[key].ConvertOutput();
 
-    public T? Get<T>(string key)
-    {
-        return (T?)Entries[key].Value;
-    }
+    public T? Get<T>(string key) => (T?)Entries[key].Value;
 
     public Dictionary<string, object?> ToDict()
     {
@@ -128,17 +116,14 @@ public class ConfigEntry<T> : ConfigEntry
         set => this.value = (T?)value;
     }
 
-    public override object? DefaultValue => defaultValue();
-
-    public override object? ConvertInput(string str)
+    public override object? DefaultValue
     {
-        return inputConverter(str);
+        get => defaultValue();
     }
 
-    public override string ConvertOutput()
-    {
-        return Type.IsArrayOf<string>()
-            ? string.Join(", ", (string[])Value!)
-            : outputConverter(value ?? defaultValue());
-    }
+    public override object? ConvertInput(string str) => inputConverter(str);
+
+    public override string ConvertOutput() => Type.IsArrayOf<string>()
+        ? string.Join(", ", (string[])Value!)
+        : outputConverter(value ?? defaultValue());
 }

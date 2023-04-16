@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace comroid.common;
 
-
 public static class Extensions
 {
     public static bool CanCast<T>(this object it) => it.CanCast(typeof(T));
     public static bool CanCast(this object it, Type type) => type.IsInstanceOfType(it);
 
-    public static T? As<T>(this object it) => it.CanCast<T>()/**/ ? (T)it : (T?)(object?)null;//&& Nullable.GetUnderlyingType(typeof(T)) == null ? (T)it : Nullable.GetUnderlyingType(typeof(T)) != null ? (T)(object?)null! : throw new InvalidCastException($"Cannot cast {it} to non-nullable type {typeof(T)}");
+    public static T? As<T>(this object it)
+        => it.CanCast<T>() /**/ ? (T)it : (T?)(object?)null; //&& Nullable.GetUnderlyingType(typeof(T)) == null ? (T)it : Nullable.GetUnderlyingType(typeof(T)) != null ? (T)(object?)null! : throw new InvalidCastException($"Cannot cast {it} to non-nullable type {typeof(T)}");
 
     public static int CopyTo(this DirectoryInfo source, string targetPath)
     {
@@ -22,13 +22,13 @@ public static class Extensions
 
         //https://stackoverflow.com/a/3822913
         //Now Create all of the directories
-        foreach (string dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories))
+        foreach (var dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories))
         {
             Directory.CreateDirectory(dirPath.Replace(sourcePath, targetPath));
         }
 
         //Copy all the files & Replaces any files with the same name
-        foreach (string newPath in Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories))
+        foreach (var newPath in Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories))
         {
             File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
             c += 1;
@@ -71,7 +71,7 @@ public static class Extensions
 
         var md5 = MD5.Create();
 
-        for (int i = 0; i < files.Length; i++)
+        for (var i = 0; i < files.Length; i++)
         {
             var file = files[i];
 
@@ -104,31 +104,58 @@ public static class Extensions
 internal class TextWriterStream : Stream
 {
     private readonly TextWriter writer;
-    public TextWriterStream(TextWriter writer) => this.writer = writer;
+    public TextWriterStream(TextWriter writer)
+    {
+        this.writer = writer;
+    }
+    public override bool CanRead
+    {
+        get => false;
+    }
+    public override bool CanSeek
+    {
+        get => false;
+    }
+    public override bool CanWrite
+    {
+        get => true;
+    }
+    public override long Length
+    {
+        get => -1;
+    }
+    public override long Position
+    {
+        get => -1;
+        set => throw new NotSupportedException();
+    }
     public override void Flush() => writer.Flush();
     public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
     public override void SetLength(long value) => throw new NotSupportedException();
     public override void Write(byte[] buffer, int offset, int count) =>
         writer.Write(buffer.Select(x => (char)x).ToArray(), offset, count);
-    public override bool CanRead => false;
-    public override bool CanSeek => false;
-    public override bool CanWrite => true;
-    public override long Length => -1;
-    public override long Position
-    {
-        get => -1;
-        set => throw new NotSupportedException();
-    }
 }
 
 public class TempFile : FileSystemInfo, IDisposable
 {
     private readonly FileInfo _file;
-    public TempFile(string? path = null) => _file = new FileInfo(path ?? Path.GetTempFileName());
-    public override bool Exists => _file.Exists;
-    public override string Name => _file.Name;
-    public override string FullName => _file.FullName;
-    public override void Delete() => _file.Delete();
+    public TempFile(string? path = null)
+    {
+        _file = new FileInfo(path ?? Path.GetTempFileName());
+    }
+    public override bool Exists
+    {
+        get => _file.Exists;
+    }
+    public override string Name
+    {
+        get => _file.Name;
+    }
+    public override string FullName
+    {
+        get => _file.FullName;
+    }
     public void Dispose() => Delete();
+    public override void Delete() => _file.Delete();
 }

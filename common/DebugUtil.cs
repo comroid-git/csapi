@@ -61,10 +61,7 @@ public static class DebugUtil
         };
     }
 
-    public static Version GetAssemblyVersion<T>()
-    {
-        return typeof(T).Assembly.GetName().Version!;
-    }
+    public static Version GetAssemblyVersion<T>() => typeof(T).Assembly.GetName().Version!;
 
     public static long Measure(Action action)
     {

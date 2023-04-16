@@ -47,7 +47,7 @@ public static class Units
 
         Physics = new UnitCategory("physics");
         Hertz = new Unit(Physics, "Hz");
-        
+
         Distance = new UnitCategory("distance", Physics);
         Meter = new Unit(Distance, "m") { Name = "Meter" };
         AstronomicalUnit = new Unit(Distance, "Au") { Name = "AstronomicalUnit" };
@@ -80,7 +80,7 @@ public static class Units
     #endregion
 
     #region Predefined Units
-    
+
     public static readonly UnitCategory Time;
     public static readonly Unit Years;
     public static readonly Unit Months;
@@ -103,7 +103,7 @@ public static class Units
     public static readonly Unit LightSecond;
     public static readonly Unit LightYear;
     public static readonly Unit Parsec;
-    
+
     public static readonly UnitCategory Electrical;
     public static readonly Unit Volts;
     public static readonly Unit Ampere;
@@ -247,22 +247,22 @@ public abstract class UnitAccumulatorStrategy
 
 public class FactorUnitChain : UnitAccumulatorStrategy
 {
-    internal readonly IList<(Unit unit, double factorFromPrevious)> chain;
     private readonly Accumulator accumulator;
+    internal readonly IList<(Unit unit, double factorFromPrevious)> chain;
 
     public FactorUnitChain(IList<(Unit unit, double factorFromPrevious)> chain)
     {
         this.chain = chain;
-        this.accumulator = new Accumulator(this);
+        accumulator = new Accumulator(this);
     }
-    
+
     public override bool IsUnitRelated(Unit arg) => chain.Any(x => x.unit == arg);
     public override IEnumerable<UnitAccumulator> CreateAccumulators(Unit unit) => new[] { accumulator };
-    
+
     private class Accumulator : UnitAccumulator
     {
         private readonly FactorUnitChain _chain;
-        
+
         public Accumulator(FactorUnitChain chain)
         {
             _chain = chain;
@@ -292,11 +292,10 @@ public class FactorUnitChain : UnitAccumulatorStrategy
                 {
                     next = _chain.chain[me + off];
                     collectiveFactor *= next.factorFromPrevious;
-                }
-                while ((double)it < collectiveFactor && me + --off >= 0);
+                } while ((double)it < collectiveFactor && me + --off >= 0);
                 return me + --off;
             }
-            
+
             var li = IndexOf(lhs);
             var ri = IndexOf(rhs);
             var l = (double)lhs;
@@ -314,10 +313,10 @@ public class FactorUnitChain : UnitAccumulatorStrategy
 
 public class CombinationUnitResolver : UnitAccumulatorStrategy
 {
-    private readonly UnitOperator _op;
     private readonly Unit _lhs;
+    private readonly UnitOperator _op;
     private readonly Unit _rhs;
-    
+
     public CombinationUnitResolver(UnitOperator op, Unit lhs, Unit rhs)
     {
         _op = op;
@@ -338,7 +337,7 @@ public abstract class UnitAccumulator
 {
     public bool BiDirectional { get; init; } = true;
     public bool OpInverse { get; init; } = true;
-    
+
     public IEnumerable<UnitValue> Apply(UnitOperator op, UnitValue lhs, UnitValue rhs)
     {
         if (Accepts(op, lhs, rhs))
@@ -346,18 +345,18 @@ public abstract class UnitAccumulator
         if (BiDirectional && Accepts(OpInverse ? op.Inverse() : op, rhs, lhs))
             yield return Accumulate(OpInverse ? op.Inverse() : op, rhs, lhs);
     }
-    
+
     public abstract bool Accepts(UnitOperator op, UnitValue lhs, UnitValue rhs);
     public abstract UnitValue Accumulate(UnitOperator op, UnitValue lhs, UnitValue rhs);
 }
 
 public class CombinationUnitAccumulator : UnitAccumulator
 {
-    private readonly UnitOperator _op;
     private readonly Unit _lhs;
-    private readonly Unit _rhs;
+    private readonly UnitOperator _op;
     private readonly Unit _output;
-    
+    private readonly Unit _rhs;
+
     public CombinationUnitAccumulator(UnitOperator op, Unit lhs, Unit rhs, Unit output)
     {
         _op = op;
@@ -365,7 +364,7 @@ public class CombinationUnitAccumulator : UnitAccumulator
         _rhs = rhs;
         _output = output;
     }
-    
+
     public override bool Accepts(UnitOperator op, UnitValue lhs, UnitValue rhs) => op == _op && lhs == _lhs && rhs == _rhs;
     public override UnitValue Accumulate(UnitOperator op, UnitValue lhs, UnitValue rhs) => new(_output, op.Apply(lhs, rhs));
 }
@@ -453,7 +452,7 @@ internal class CombinationUnit : Unit
             return new CombinationUnit(leftoversByIM);
         return leftoversByIM.Length == 1 ? leftoversByIM[0] : left;
     }
-    
+
     public static UnitValue? Strip(Unit @base, Unit strip, double value)
     {
         @base |= SiPrefix.One;
@@ -509,7 +508,7 @@ public class UnitValue : UnitInstance
     private static UnitValue? RunAccumulators(UnitOperator op, UnitValue l, UnitValue r) => UnitCategory.Base.IterateAccumulators()
         .SelectMany(acc => acc.Apply(op, l, r))
         .CastOrSkip<UnitValue>()
-        .FirstOrDefault(); 
+        .FirstOrDefault();
 
     public static UnitValue operator |(UnitValue value, SiPrefix prefix)
         => new(value as Unit | prefix, value.SiPrefix.ConvertTo(prefix, value.Value, value.Base));

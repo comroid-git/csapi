@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using comroid.common;
 
 namespace comroid.common;
 
@@ -22,6 +21,7 @@ public enum CapitalizationCase : byte
 
 public static class StringUtil
 {
+    private static readonly Regex NewLinePattern = new("[^\\r]\\n", RegexOptions.Multiline | RegexOptions.CultureInvariant);
     public static string Adjust(this string str, int len, bool rightBound = false, bool doFill = true,
         char fill = ' ')
     {
@@ -48,14 +48,14 @@ public static class StringUtil
     }
 
     public static string StripExtension(this string str, string ext) => str.Substring(0, str.IndexOf(ext));
-
-    private static readonly Regex NewLinePattern = new("[^\\r]\\n", RegexOptions.Multiline | RegexOptions.CultureInvariant);
     public static string Cleanup(this string str, bool replaceLfWithCrlf = false, bool keepAnsi = false, bool trimWhitespaces = false)
     {
-        if (!replaceLfWithCrlf) while (NewLinePattern.IsMatch(str))
-            str = NewLinePattern.Replace(str, "\r\n");
-        if (!keepAnsi) while (str.ContainsAnsi())
-            str = str.RemoveAnsi();
+        if (!replaceLfWithCrlf)
+            while (NewLinePattern.IsMatch(str))
+                str = NewLinePattern.Replace(str, "\r\n");
+        if (!keepAnsi)
+            while (str.ContainsAnsi())
+                str = str.RemoveAnsi();
         if (trimWhitespaces)
             return str.Trim();
         return str;
@@ -219,7 +219,7 @@ public class TextTable
                 sb.Append(HoriDetailLine(totalW, colTrims, LineType.IdxVertical, row.Detail));
                 continue;
             }
-            
+
             sb.Append(text.Adjust(Math.Max(colLengths[i], text.Length), col._justifyRight));
             if (i < cc - 1)
                 if (lines) sb.Append(indent);
@@ -236,7 +236,10 @@ public class TextTable
         internal readonly Dictionary<Column, object> _data = new Dictionary<Column, object>();
         public virtual LineType Detail { get; set; }
 
-        protected internal virtual bool Separator => false;
+        protected internal virtual bool Separator
+        {
+            get => false;
+        }
 
         public Row SetData(Column col, object data)
         {
@@ -248,7 +251,10 @@ public class TextTable
     protected class SeparatorRow : Row
     {
         public override LineType Detail { get; set; }
-        protected internal override bool Separator => true;
+        protected internal override bool Separator
+        {
+            get => true;
+        }
     }
 
     public class Column

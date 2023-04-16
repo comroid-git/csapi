@@ -60,10 +60,13 @@ public static class AnsiUtil
 
     private static bool _available = true;
 
-    public static bool Enabled => _available && log.RunWithExceptionLogger(
-        () => GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), out var mode) &&
-              (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-        ERROR_MESSAGE, _ => _available = false, LogLevel.Warning);
+    public static bool Enabled
+    {
+        get => _available && log.RunWithExceptionLogger(
+            () => GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), out var mode) &&
+                  (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == ENABLE_VIRTUAL_TERMINAL_PROCESSING,
+            ERROR_MESSAGE, _ => _available = false, LogLevel.Warning);
+    }
 
     [DllImport("kernel32.dll")]
     private static extern bool GetConsoleMode(IntPtr hConsoleHandle, out uint lpMode);
@@ -77,15 +80,9 @@ public static class AnsiUtil
     [DllImport("kernel32.dll")]
     public static extern uint GetLastError();
 
-    public static string ByteColor(byte b)
-    {
-        return $"\u001b[38;5;${b}m";
-    }
+    public static string ByteColor(byte b) => $"\u001b[38;5;${b}m";
 
-    public static string CursorPos(int row, int col)
-    {
-        return $"\u001b[{row};{col}H";
-    }
+    public static string CursorPos(int row, int col) => $"\u001b[{row};{col}H";
 
     public static bool Init()
     {
