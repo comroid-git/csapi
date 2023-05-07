@@ -73,6 +73,9 @@ public static class AnsiUtil
             }
             catch(Exception e)
             {
+#if DEBUG
+                Console.Error.WriteLine(ERROR_MESSAGE + '\n' + e);
+#endif
                 _available = false;
             }
             return _available;
@@ -120,6 +123,9 @@ public static class AnsiUtil
         }
         catch (Exception e)
         {
+#if DEBUG
+            Console.Error.WriteLine(ERROR_MESSAGE + '\n' + e);
+#endif
             return false;
         }
     }
