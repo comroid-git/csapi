@@ -74,7 +74,7 @@ public static class AnsiUtil
             catch(Exception e)
             {
 #if DEBUG
-                log.ExceptionLogger(ERROR_MESSAGE)(e);
+                Console.Error.WriteLine(ERROR_MESSAGE + '\n' + e);
 #endif
                 _available = false;
             }
@@ -124,7 +124,7 @@ public static class AnsiUtil
         catch (Exception e)
         {
 #if DEBUG
-            log.ExceptionLogger(ERROR_MESSAGE)(e);
+            Console.Error.WriteLine(ERROR_MESSAGE + '\n' + e);
 #endif
             return false;
         }
