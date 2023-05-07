@@ -62,10 +62,24 @@ public static class AnsiUtil
 
     public static bool Enabled
     {
-        get => _available && log.RunWithExceptionLogger(
-            () => GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), out var mode) &&
-                  (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == ENABLE_VIRTUAL_TERMINAL_PROCESSING,
-            ERROR_MESSAGE, _ => _available = false, LogLevel.Warning);
+        get
+        {
+            if (!_available)
+                return false;
+            try
+            {
+                if (GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), out var mode) && (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == ENABLE_VIRTUAL_TERMINAL_PROCESSING)
+                    return true;
+            }
+            catch(Exception e)
+            {
+#if DEBUG
+                log.ExceptionLogger(ERROR_MESSAGE)(e);
+#endif
+                _available = false;
+            }
+            return _available;
+        }
     }
 
     [DllImport("kernel32.dll")]
@@ -86,7 +100,7 @@ public static class AnsiUtil
 
     public static bool Init()
     {
-        return log.RunWithExceptionLogger(() =>
+        try
         {
             if (Enabled)
                 return false;
@@ -105,10 +119,17 @@ public static class AnsiUtil
                 Console.ReadKey();
                 return false;
             }
-
             return Enabled;
-        }, ERROR_MESSAGE, _ => false, LogLevel.Warning);
+        }
+        catch (Exception e)
+        {
+#if DEBUG
+            log.ExceptionLogger(ERROR_MESSAGE)(e);
+#endif
+            return false;
+        }
     }
+
 
     public static bool ContainsAnsi(this string str)
     {
