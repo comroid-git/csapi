@@ -43,20 +43,19 @@ public class MultiWriter : TextWriter
 public interface ILog
 {
     private protected static readonly ConcurrentDictionary<Type, ILog> cache;
-    private protected static readonly TextTable writerAdapter;
-    private protected static readonly TextTable.Column colTime;
-    private protected static readonly TextTable.Column colLevel;
-    private protected static readonly TextTable.Column colName;
-    private protected static readonly TextTable.Column colMessage;
+    private protected static readonly LogWriterAdapter writerAdapter;
+    public static DetailLevel Detail { get; set; } =
+#if DEBUG
+        DetailLevel.High
+#else
+        DetailLevel.Low
+#endif
+        ;
 
     static ILog()
     {
         cache = new ConcurrentDictionary<Type, ILog>();
-        writerAdapter = new TextTable { Lines = TextTable.LineMode.ASCII, Header = false };
-        colTime = writerAdapter.AddColumn("time");
-        colLevel = writerAdapter.AddColumn("level");
-        colName = writerAdapter.AddColumn("name");
-        colMessage = writerAdapter.AddColumn("message");
+        writerAdapter = new LogWriterAdapter { Lines = TextTable.LineMode.ASCII, Header = false };
         AnsiUtil.Init();
     }
 
@@ -69,7 +68,86 @@ public interface ILog
     R? At<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false);
 }
 
-internal class LogLevelTextWriter : TextWriter
+internal class LogWriterAdapter : TextTable
+{
+    private protected static Column colTime = null!;
+    private protected static Column colLevel = null!;
+    private protected static Column colName = null!;
+    private protected static Column colMessage = null!;
+
+    private void InitColumns()
+    {
+        // late initializer due to setting of DetailLevel
+
+        void ColTime() => colTime = AddColumn("time");
+        void ColLevel() => colLevel = AddColumn("level");
+        void ColName() => colName = AddColumn("name");
+        void ColMessage() => colMessage = AddColumn("message");
+
+        switch (ILog.Detail)
+        {
+            case DetailLevel.None:
+                ColLevel();
+                ColMessage();
+                break;
+            case DetailLevel.Low:
+                ColLevel();
+                ColName();
+                ColMessage();
+                break;
+            default:
+                ColTime();
+                ColLevel();
+                ColName();
+                ColMessage();
+                break;
+        }
+    }
+
+    public void WriteLine(Row row, TextWriter writer = null!)
+    {
+        writer ??= Console.Out;
+        var cc = Columns.Count;
+        if (cc == 0)
+            InitColumns();
+        if (cc != (colLengths?.Length ?? -1))
+        {
+            (var old, colLengths) = (colLengths, new int[cc]);
+            Array.Copy(old ?? Array.Empty<int>(), colLengths, old?.Length ?? 0);
+        }
+
+        var sb = new StringBuilder();
+        var indent = VertIndent(LineType.IdxHorizontal);
+        for (var i = 0; i < cc; i++)
+        {
+            // for each column, collect longest data
+            var col = Columns[i];
+            var text = row._data[col.Name].ToString()!;
+            var len = text.Length;
+            if (colLengths![i] < len)
+                colLengths[i] = Math.Min(len, 64);
+
+            // and then write column with updated lengths
+            var lines = Lines != null;
+            if (lines && row.Separator)
+            {
+                var totalW = colLengths.Aggregate(0, (a, b) => a + b + margin /**/) + cc + colLengths.Length * margin;
+                var colTrims = colLengths.Select(x => 1 + x + margin * 2).Append(0).ToArray();
+                sb.Append(HoriDetailLine(totalW, colTrims, LineType.IdxVertical, row.Detail));
+                continue;
+            }
+
+            sb.Append(text.Adjust(Math.Max(colLengths[i], text.Length), col._justifyRight));
+            if (i < cc - 1)
+                if (lines) sb.Append(indent);
+                else sb.Append(' ');
+        }
+
+        writer.WriteLine(sb);
+    }
+}
+
+public class LogLevelTextWriter : TextWriter
 {
     private readonly StringBuilder buffer = new();
     private readonly LogLevel level;
@@ -105,11 +183,13 @@ public class Log : ILog
             LogLevel.Info
 #endif
         ;
+    private const DetailLevel UnsetDetail = unchecked((DetailLevel)(-1));
     public static readonly Log Root = new("Root");
     public static readonly Log Debug = new(Root, typeof(Debug), "Debug") { Writer = new DebugWriter() };
     private readonly ILog? _parent;
     private bool? _fullNames;
     private LogLevel? _level = UnsetLevel;
+    private DetailLevel? _detail = UnsetDetail;
     private string? _name;
     private TextWriter? _writer;
 
@@ -174,10 +254,10 @@ public class Log : ILog
         {
             _data =
             {
-                { ILog.colTime, DateTime.Now },
-                { ILog.colLevel, _LV(level) },
-                { ILog.colName, Name },
-                { ILog.colMessage, message }
+                { "time", DateTime.Now },
+                { "level", _LV(level) },
+                { "name", Name },
+                { "message", message }
             }
         }, Writer);
         if (error) throw new Exception(message.ToString());
@@ -359,4 +439,14 @@ public enum LogLevel : byte
     Debug = 212,
     Trace = 254,
     All = 255
+}
+
+public enum DetailLevel : byte
+{
+    None = 0, // effectively Console.WriteLine() with log level
+    Low = 1, // also includes short logger name
+    Medium = 2, // also includes time
+    High = 3, // also includes date
+    Extreme = 4, // includes long logger names
+    Trimmed = 5 // TODO trims excessive class names
 }

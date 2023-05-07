@@ -65,9 +65,9 @@ public static class StringUtil
 [SuppressMessage("ReSharper", "ArrangeObjectCreationWhenTypeEvident")]
 public class TextTable
 {
-    private const int margin = 1;
+    protected const int margin = 1;
 
-    private int[]? colLengths;
+    protected int[]? colLengths;
 
     public TextTable()
     {
@@ -92,7 +92,7 @@ public class TextTable
     {
         var row = new Row();
         foreach (var col in Columns)
-            row._data[col] = string.Empty;
+            row._data[col.Name] = string.Empty;
         Rows.Add(row);
         return row;
     }
@@ -113,7 +113,7 @@ public class TextTable
             foreach (var data in new[] { Header ? col.Name : string.Empty }
                          .Concat(Rows
                              .Where(row => !row.Separator)
-                             .Select(row => row._data[col])))
+                             .Select(row => row._data[col.Name])))
             {
                 var len = data.ToString()!.Cleanup(trimWhitespaces: true).Length;
                 if (lens[i] < len)
@@ -173,7 +173,7 @@ public class TextTable
                 if (lines)
                     sb.Append(VertIndent(dir));
                 dir |= LineType.ConL;
-                sb.Append(row._data[col].ToString()!.Adjust(lens[i], col._justifyRight));
+                sb.Append(row._data[col.Name].ToString()!.Adjust(lens[i], col._justifyRight));
                 if (!lines)
                     sb.Append(' ');
             }
@@ -189,51 +189,11 @@ public class TextTable
         return sb.ToString();
     }
 
-    public void WriteLine(Row row, TextWriter writer = null!)
-    {
-        writer ??= Console.Out;
-        var cc = Columns.Count;
-        if (cc != (colLengths?.Length ?? -1))
-        {
-            (var old, colLengths) = (colLengths, new int[cc]);
-            Array.Copy(old ?? Array.Empty<int>(), colLengths, old?.Length ?? 0);
-        }
-
-        var sb = new StringBuilder();
-        var indent = VertIndent(LineType.IdxHorizontal);
-        for (var i = 0; i < cc; i++)
-        {
-            // for each column, collect longest data
-            var col = Columns[i];
-            var text = row._data[col].ToString()!;
-            var len = text.Length;
-            if (colLengths![i] < len)
-                colLengths[i] = Math.Min(len, 64);
-
-            // and then write column with updated lengths
-            var lines = Lines != null;
-            if (lines && row.Separator)
-            {
-                var totalW = colLengths.Aggregate(0, (a, b) => a + b + margin /**/) + cc + colLengths.Length * margin;
-                var colTrims = colLengths.Select(x => 1 + x + margin * 2).Append(0).ToArray();
-                sb.Append(HoriDetailLine(totalW, colTrims, LineType.IdxVertical, row.Detail));
-                continue;
-            }
-
-            sb.Append(text.Adjust(Math.Max(colLengths[i], text.Length), col._justifyRight));
-            if (i < cc - 1)
-                if (lines) sb.Append(indent);
-                else sb.Append(' ');
-        }
-
-        writer.WriteLine(sb);
-    }
-
     #region Components
 
     public class Row
     {
-        internal readonly Dictionary<Column, object> _data = new Dictionary<Column, object>();
+        internal readonly Dictionary<string, object> _data = new Dictionary<string, object>();
         public virtual LineType Detail { get; set; }
 
         protected internal virtual bool Separator
@@ -241,7 +201,8 @@ public class TextTable
             get => false;
         }
 
-        public Row SetData(Column col, object data)
+        public Row SetData(Column col, object data) => SetData(col.Name, data);
+        public Row SetData(string col, object data)
         {
             _data[col] = data;
             return this;
@@ -292,7 +253,7 @@ public class TextTable
         return best?.c ?? '#';
     }
 
-    private string VertIndent(LineType dir, LineType detail = LineType.None)
+    protected string VertIndent(LineType dir, LineType detail = LineType.None)
     {
         var str = string.Empty;
         if ((dir & LineType.ConL) != 0)
@@ -303,7 +264,7 @@ public class TextTable
         return str;
     }
 
-    private string HoriDetailLine(int len, int[] trims, LineType diff, LineType detail = LineType.None)
+    protected string HoriDetailLine(int len, int[] trims, LineType diff, LineType detail = LineType.None)
     {
         var line = LineType.ConR;
         var str = string.Empty;
