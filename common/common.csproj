@@ -7,11 +7,16 @@
         <RootNamespace>comroid.common</RootNamespace>
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
         <Version>0.1.0</Version>
-        <Title>Common C# Utilities</Title>
+        <Title>Common C# Utilities used by comroid Projects</Title>
         <Authors>comroid</Authors>
         <AssemblyVersion>0.1.0</AssemblyVersion>
         <TargetFramework>net6.0</TargetFramework>
         <LangVersion>preview</LangVersion>
+        <PackageId>comroid.csapi.common</PackageId>
+        <PackageProjectUrl>https://github.com/comroid-git/csapi</PackageProjectUrl>
+        <PackageLicenseUrl>https://github.com/comroid-git/csapi/blob/main/LICENSE</PackageLicenseUrl>
+        <RepositoryUrl>https://github.com/comroid-git/csapi</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
     </PropertyGroup>
 
     <ItemGroup>
