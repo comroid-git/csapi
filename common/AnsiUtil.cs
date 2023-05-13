@@ -71,7 +71,7 @@ public static class AnsiUtil
                 if (GetConsoleMode(GetStdHandle(STD_OUTPUT_HANDLE), out var mode) && (mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING) == ENABLE_VIRTUAL_TERMINAL_PROCESSING)
                     return true;
             }
-            catch(Exception e)
+            catch (Exception e)
             {
 #if DEBUG
                 Console.Error.WriteLine(ERROR_MESSAGE + '\n' + e);

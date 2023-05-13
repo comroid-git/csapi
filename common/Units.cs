@@ -70,7 +70,7 @@ public static class Units
         Coulomb = new Unit(Electrical, "C") { Name = "Coulomb" };
         Farad = new Unit(Electrical, "F") { Name = "Farad", Strategies = { ResultOf(Coulomb, UnitOperator.Divide, Volts) } };
         Henry = new Unit(Electrical, "He") { Name = "Henry", Strategies = { ResultOf(Ohm, UnitOperator.Multiply, Seconds) } };
-        
+
         // complex conversion chains
         RegisterFactorUnitChain(
             (Watts * Seconds, 1),

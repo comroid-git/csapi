@@ -44,13 +44,6 @@ public interface ILog
 {
     private protected static readonly ConcurrentDictionary<Type, ILog> cache;
     private protected static readonly LogWriterAdapter writerAdapter;
-    public static DetailLevel Detail { get; set; } =
-#if DEBUG
-        DetailLevel.High
-#else
-        DetailLevel.Low
-#endif
-        ;
 
     static ILog()
     {
@@ -58,6 +51,14 @@ public interface ILog
         writerAdapter = new LogWriterAdapter { Lines = TextTable.LineMode.ASCII, Header = false };
         AnsiUtil.Init();
     }
+
+    public static DetailLevel Detail { get; set; } =
+#if DEBUG
+        DetailLevel.High
+#else
+        DetailLevel.Low
+#endif
+        ;
 
     Type Type { get; }
     string Name { get; }
