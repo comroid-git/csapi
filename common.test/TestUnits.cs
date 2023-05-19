@@ -25,6 +25,15 @@ public class TestUnits
         Assert.That((double)output, Is.EqualTo(8000));
         Assert.That(output.ToString(), Is.EqualTo("8000V"));
     }
+    
+    [Test]
+    public void TestInvalidConversion()
+    {
+        var input = 1 * Units.Bytes;
+        var output = input | Units.Seconds;
+
+        Assert.That((double)output, Is.NaN);
+    }
 
     [Test]
     public void TestByteConversion()
