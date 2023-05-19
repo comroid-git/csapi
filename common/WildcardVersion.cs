@@ -1,11 +1,11 @@
 using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace comroid.common;
 
 public class WildcardVersion : IComparable, IComparable<Version?>, IEquatable<Version?>
 {
-    public const char Wildcard = '+';
     public const int WildcardValue = int.MaxValue;
     public const int UnsetValue = -1;
 
@@ -55,21 +55,27 @@ public class WildcardVersion : IComparable, IComparable<Version?>, IEquatable<Ve
 
     public override string ToString()
     {
-        var str = IntoWildcard(Major);
-        foreach (var field in new[] { Minor, Build, Revision })
+        var str = IntoWildcard(Major, out var wc);
+        if (!wc) foreach (var field in new[] { Minor, Build, Revision })
+        {
             if (field == UnsetValue)
                 break;
-            else str += IntoWildcard(field);
+            else str += '.' + IntoWildcard(field, out wc);
+            if (wc) break;
+        }
         return str;
     }
 
     #region Utility Methods
 
-    private int? FromWildcard(Match match, string group) => !match.Groups.ContainsKey(group) ? null :
-        match.Groups[group].Value == "+" || string.IsNullOrEmpty(match.Groups[group].Value) ? WildcardValue :
-        int.Parse(match.Groups[group].Value);
+    private int? FromWildcard(Match match, string group) => !match.Groups.ContainsKey(group)
+        ? null
+        : match.Groups[group].Value is "*" or "+"
+          || string.IsNullOrEmpty(match.Groups[group].Value)
+            ? WildcardValue
+            : int.Parse(match.Groups[group].Value);
 
-    private string IntoWildcard(int value) => (value == WildcardValue ? Wildcard : value).ToString();
+    private string IntoWildcard(int value, out bool wc) => (wc = value == WildcardValue) ? "*" : value.ToString();
 
     public static implicit operator Version?(WildcardVersion? ver) => ver == null ? null : new(ver.Major, ver.Minor, ver.Build, ver.Revision);
 
@@ -87,14 +93,15 @@ public class WildcardVersion : IComparable, IComparable<Version?>, IEquatable<Ve
 
     public int CompareTo(object? obj) => -1 * (obj as Version)?.CompareTo(this) ?? 1;
 
-    public int CompareTo(Version? other)
+    public int CompareTo(Version? other) => this.CompareTo((WildcardVersion?)other);
+
+    public int CompareTo(WildcardVersion? other)
     {
-        if (other == null)
-            return 1;
-        if (Major != other?.Major) return other!.Major - Major;
-        if (Minor != other.Minor) return other.Minor - Minor;
-        if (Build != other.Build) return other.Build - Build;
-        if (Revision != other.Revision) return other.Revision - Revision;
+        if (other == null) return 1;
+        if (Major != other?.Major) return Major - other!.Major;
+        if (Minor != other.Minor) return Minor - other.Minor;
+        if (Build != other.Build) return Build - other.Build;
+        if (Revision != other.Revision) return Revision - other.Revision;
         return 0;
     }
 
