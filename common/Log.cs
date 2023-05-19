@@ -269,13 +269,13 @@ public class Log : ILog
 
     public R? At<R>(LogLevel level, object? message, Func<object, R?>? fallback = null, bool error = false) => _Log(level, message, fallback, error);
     
-    public void Fatal(object message, object? detail = null) => At(LogLevel.Fatal, _LOD(message,detail));
-    public void Error(object message, object? detail = null) => At(LogLevel.Error, _LOD(message,detail));
-    public void Warning(object message, object? detail = null) => At(LogLevel.Warning, _LOD(message,detail));
-    public void Info(object message, object? detail = null) => At(LogLevel.Info, _LOD(message,detail));
-    public void Config(object message, object? detail = null) => At(LogLevel.Config, _LOD(message,detail));
-    public void Debug(object message, object? detail = null) => At(LogLevel.Debug, _LOD(message,detail));
-    public void Trace(object message, object? detail = null) => At(LogLevel.Trace, _LOD(message,detail));
+    public void Fatal(object message, object? detail = null) => At(LogLevel.Fatal, _LOD(LogLevel.Fatal, message,detail));
+    public void Error(object message, object? detail = null) => At(LogLevel.Error, _LOD(LogLevel.Error, message,detail));
+    public void Warning(object message, object? detail = null) => At(LogLevel.Warning, _LOD(LogLevel.Warning, message,detail));
+    public void Info(object message, object? detail = null) => At(LogLevel.Info, _LOD(LogLevel.Info, message,detail));
+    public void Config(object message, object? detail = null) => At(LogLevel.Config, _LOD(LogLevel.Config, message,detail));
+    public void Debug(object message, object? detail = null) => At(LogLevel.Debug, _LOD(LogLevel.Debug, message,detail));
+    public void Trace(object message, object? detail = null) => At(LogLevel.Trace, _LOD(LogLevel.Trace, message,detail));
 
     private R? _Log<R>(LogLevel level, object? message, Func<object, R?>? fallback, bool error)
     {
@@ -297,7 +297,7 @@ public class Log : ILog
         return fb;
     }
 
-    private protected static string _LOD(object msg, object? detail) => msg + (detail != null && ILog.Detail >= DetailLevel.High ? "\n" + detail : string.Empty); 
+    private protected static string _LOD(LogLevel level, object msg, object? detail) => msg + (detail != null && (level <= LogLevel.Warning || ILog.Detail >= DetailLevel.High) ? "\n" + detail : string.Empty); 
 
     private R? _FB<R>(object message, Func<object, R?>? fallback)
     {
@@ -457,13 +457,13 @@ public class Log<T> : Log where T : class
 
     public new static R? At<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false) => ((Log)Get()).At(level, message, fallback, error);
 
-    public new static void Fatal(object message, object? detail = null) => At<object>(LogLevel.Fatal, _LOD(message,detail));
-    public new static void Error(object message, object? detail = null) => At<object>(LogLevel.Error, _LOD(message,detail));
-    public new static void Warning(object message, object? detail = null) => At<object>(LogLevel.Warning, _LOD(message,detail));
-    public new static void Info(object message, object? detail = null) => At<object>(LogLevel.Info, _LOD(message,detail));
-    public new static void Config(object message, object? detail = null) => At<object>(LogLevel.Config, _LOD(message,detail));
-    public new static void Debug(object message, object? detail = null) => At<object>(LogLevel.Debug, _LOD(message,detail));
-    public new static void Trace(object message, object? detail = null) => At<object>(LogLevel.Trace, _LOD(message,detail));
+    public new static void Fatal(object message, object? detail = null) => At<object>(LogLevel.Fatal, _LOD(LogLevel.Fatal, message,detail));
+    public new static void Error(object message, object? detail = null) => At<object>(LogLevel.Error, _LOD(LogLevel.Error, message,detail));
+    public new static void Warning(object message, object? detail = null) => At<object>(LogLevel.Warning, _LOD(LogLevel.Warning, message,detail));
+    public new static void Info(object message, object? detail = null) => At<object>(LogLevel.Info, _LOD(LogLevel.Info, message,detail));
+    public new static void Config(object message, object? detail = null) => At<object>(LogLevel.Config, _LOD(LogLevel.Config, message,detail));
+    public new static void Debug(object message, object? detail = null) => At<object>(LogLevel.Debug, _LOD(LogLevel.Debug, message,detail));
+    public new static void Trace(object message, object? detail = null) => At<object>(LogLevel.Trace, _LOD(LogLevel.Trace, message,detail));
 
     public static Log<T> Get()
     {
