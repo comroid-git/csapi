@@ -202,7 +202,13 @@ public class Log : ILog
             LogLevel.Info
 #endif
         ;
-    private const DetailLevel UnsetDetail = unchecked((DetailLevel)(-1));
+    public const DetailLevel DefaultDetail =
+#if DEBUG
+            DetailLevel.High
+#else
+            DetailLevel.Low
+#endif
+        ;
     [Obsolete]
     public static Log Root => RootLogger;
     public static readonly Log RootLogger = new("Root");
@@ -210,7 +216,7 @@ public class Log : ILog
     private readonly ILog? _parent;
     private bool? _fullNames;
     private LogLevel? _level = UnsetLevel;
-    private DetailLevel? _detail = UnsetDetail;
+    private DetailLevel? _detail = DefaultDetail;
     private string? _name;
     private TextWriter? _writer;
 
@@ -265,13 +271,13 @@ public class Log : ILog
 
     public R? At<R>(LogLevel level, object? message, Func<object, R?>? fallback = null, bool error = false) => _Log(level, message, fallback, error);
     
-    public void Fatal(object message, object? detail = null) => At(LogLevel.Fatal, message + (detail == null ? string.Empty : "\n" + detail));
-    public void Error(object message, object? detail = null) => At(LogLevel.Error, message + (detail == null ? string.Empty : "\n" + detail));
-    public void Warning(object message, object? detail = null) => At(LogLevel.Warning, message + (detail == null ? string.Empty : "\n" + detail));
-    public void Info(object message, object? detail = null) => At(LogLevel.Info, message + (detail == null ? string.Empty : "\n" + detail));
-    public void Config(object message, object? detail = null) => At(LogLevel.Config, message + (detail == null ? string.Empty : "\n" + detail));
-    public void Debug(object message, object? detail = null) => At(LogLevel.Debug, message + (detail == null ? string.Empty : "\n" + detail));
-    public void Trace(object message, object? detail = null) => At(LogLevel.Trace, message + (detail == null ? string.Empty : "\n" + detail));
+    public void Fatal(object message, object? detail = null) => At(LogLevel.Fatal, _LOD(message,detail));
+    public void Error(object message, object? detail = null) => At(LogLevel.Error, _LOD(message,detail));
+    public void Warning(object message, object? detail = null) => At(LogLevel.Warning, _LOD(message,detail));
+    public void Info(object message, object? detail = null) => At(LogLevel.Info, _LOD(message,detail));
+    public void Config(object message, object? detail = null) => At(LogLevel.Config, _LOD(message,detail));
+    public void Debug(object message, object? detail = null) => At(LogLevel.Debug, _LOD(message,detail));
+    public void Trace(object message, object? detail = null) => At(LogLevel.Trace, _LOD(message,detail));
 
     private R? _Log<R>(LogLevel level, object? message, Func<object, R?>? fallback, bool error)
     {
@@ -292,6 +298,8 @@ public class Log : ILog
         if (error) throw new Exception(message.ToString());
         return fb;
     }
+
+    private string _LOD(object msg, object? detail) => msg + (detail != null && _detail >= DetailLevel.High ? "\n" + detail : string.Empty); 
 
     private R? _FB<R>(object message, Func<object, R?>? fallback)
     {
@@ -475,7 +483,7 @@ public enum DetailLevel : byte
     None = 0, // effectively Console.WriteLine() with log level
     Low = 1, // also includes short logger name
     Medium = 2, // also includes time
-    High = 3, // also includes date
+    High = 3, // also includes date and detail
     Extreme = 4, // includes long logger names
     Trimmed = 5 // TODO trims excessive class names
 }
