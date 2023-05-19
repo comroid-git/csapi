@@ -265,13 +265,13 @@ public class Log : ILog
 
     public R? At<R>(LogLevel level, object? message, Func<object, R?>? fallback = null, bool error = false) => _Log(level, message, fallback, error);
     
-    public void Fatal(object message, object? detail = null) => At(LogLevel.Fatal, message + (detail == null ? string.Empty : "\n\t" + detail));
-    public void Error(object message, object? detail = null) => At(LogLevel.Error, message + (detail == null ? string.Empty : "\n\t" + detail));
-    public void Warning(object message, object? detail = null) => At(LogLevel.Warning, message + (detail == null ? string.Empty : "\n\t" + detail));
-    public void Info(object message, object? detail = null) => At(LogLevel.Info, message + (detail == null ? string.Empty : "\n\t" + detail));
-    public void Config(object message, object? detail = null) => At(LogLevel.Config, message + (detail == null ? string.Empty : "\n\t" + detail));
-    public void Debug(object message, object? detail = null) => At(LogLevel.Debug, message + (detail == null ? string.Empty : "\n\t" + detail));
-    public void Trace(object message, object? detail = null) => At(LogLevel.Trace, message + (detail == null ? string.Empty : "\n\t" + detail));
+    public void Fatal(object message, object? detail = null) => At(LogLevel.Fatal, message + (detail == null ? string.Empty : "\n" + detail));
+    public void Error(object message, object? detail = null) => At(LogLevel.Error, message + (detail == null ? string.Empty : "\n" + detail));
+    public void Warning(object message, object? detail = null) => At(LogLevel.Warning, message + (detail == null ? string.Empty : "\n" + detail));
+    public void Info(object message, object? detail = null) => At(LogLevel.Info, message + (detail == null ? string.Empty : "\n" + detail));
+    public void Config(object message, object? detail = null) => At(LogLevel.Config, message + (detail == null ? string.Empty : "\n" + detail));
+    public void Debug(object message, object? detail = null) => At(LogLevel.Debug, message + (detail == null ? string.Empty : "\n" + detail));
+    public void Trace(object message, object? detail = null) => At(LogLevel.Trace, message + (detail == null ? string.Empty : "\n" + detail));
 
     private R? _Log<R>(LogLevel level, object? message, Func<object, R?>? fallback, bool error)
     {
