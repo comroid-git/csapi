@@ -553,7 +553,7 @@ public class UnitValue : UnitInstance
         => $"{Value:0.###}{(SiPrefix == SiPrefix.One ? string.Empty : SiPrefix.ToString())}{Identifier}";
 }
 
-public enum SiPrefix
+public enum SiPrefix : short
 {
     z = -21, // Zepto
     y = -24, // Yocto
@@ -565,7 +565,7 @@ public enum SiPrefix
     m = -3, // Milli
     //c = -2, // Centi
     //d = -1, // Deci
-    One = 0, // None
+    One = default, // None
     //da = 1, // Deca
     //h = 2, // Hecto
     k = 3, // Kilo
