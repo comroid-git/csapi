@@ -65,8 +65,26 @@ public interface ILog
     bool FullNames { get; set; }
     LogLevel Level { get; set; }
     TextWriter Writer { get; set; }
+
+    #region Simple Appenders
+    
+    void Fatal(object message, object? detail = null);
+    void Error(object message, object? detail = null);
+    void Warning(object message, object? detail = null);
+    void Info(object message, object? detail = null);
+    void Config(object message, object? detail = null);
+    void Debug(object message, object? detail = null);
+    void Trace(object message, object? detail = null);
+
+    #endregion
+
+    #region Extended Appenders
+    
+    [Obsolete]
     object? At(LogLevel level, object message, Func<object, object?>? fallback = null, bool error = false);
     R? At<R>(LogLevel level, object message, Func<object, R?>? fallback = null, bool error = false);
+
+    #endregion
 }
 
 internal class LogWriterAdapter : TextTable
@@ -185,8 +203,10 @@ public class Log : ILog
 #endif
         ;
     private const DetailLevel UnsetDetail = unchecked((DetailLevel)(-1));
-    public static readonly Log Root = new("Root");
-    public static readonly Log Debug = new(Root, typeof(Debug), "Debug") { Writer = new DebugWriter() };
+    [Obsolete]
+    public static Log Root => RootLogger;
+    public static readonly Log RootLogger = new("Root");
+    public static readonly Log DebugLogger = new(RootLogger, typeof(Debug), "Debug") { Writer = new DebugWriter() };
     private readonly ILog? _parent;
     private bool? _fullNames;
     private LogLevel? _level = UnsetLevel;
@@ -244,6 +264,14 @@ public class Log : ILog
     public object? At(LogLevel level, object? message, Func<object, object?>? fallback = null, bool error = false) => _Log(level, message, fallback, error);
 
     public R? At<R>(LogLevel level, object? message, Func<object, R?>? fallback = null, bool error = false) => _Log(level, message, fallback, error);
+    
+    public void Fatal(object message, object? detail = null) => At(LogLevel.Fatal, message + (detail == null ? string.Empty : "\n\t" + detail));
+    public void Error(object message, object? detail = null) => At(LogLevel.Error, message + (detail == null ? string.Empty : "\n\t" + detail));
+    public void Warning(object message, object? detail = null) => At(LogLevel.Warning, message + (detail == null ? string.Empty : "\n\t" + detail));
+    public void Info(object message, object? detail = null) => At(LogLevel.Info, message + (detail == null ? string.Empty : "\n\t" + detail));
+    public void Config(object message, object? detail = null) => At(LogLevel.Config, message + (detail == null ? string.Empty : "\n\t" + detail));
+    public void Debug(object message, object? detail = null) => At(LogLevel.Debug, message + (detail == null ? string.Empty : "\n\t" + detail));
+    public void Trace(object message, object? detail = null) => At(LogLevel.Trace, message + (detail == null ? string.Empty : "\n\t" + detail));
 
     private R? _Log<R>(LogLevel level, object? message, Func<object, R?>? fallback, bool error)
     {
