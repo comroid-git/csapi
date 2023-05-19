@@ -93,7 +93,7 @@ internal class LogWriterAdapter : TextTable
     private protected static Column colName = null!;
     private protected static Column colMessage = null!;
 
-    private void InitColumns()
+    private int InitColumns()
     {
         // late initializer due to setting of DetailLevel
 
@@ -107,18 +107,18 @@ internal class LogWriterAdapter : TextTable
             case DetailLevel.None:
                 ColLevel();
                 ColMessage();
-                break;
+                return 2;
             case DetailLevel.Low:
                 ColLevel();
                 ColName();
                 ColMessage();
-                break;
+                return 3;
             default:
                 ColTime();
                 ColLevel();
                 ColName();
                 ColMessage();
-                break;
+                return 4;
         }
     }
 
@@ -127,7 +127,7 @@ internal class LogWriterAdapter : TextTable
         writer ??= Console.Out;
         var cc = Columns.Count;
         if (cc == 0)
-            InitColumns();
+            cc = InitColumns();
         if (cc != (colLengths?.Length ?? -1))
         {
             (var old, colLengths) = (colLengths, new int[cc]);
