@@ -283,6 +283,8 @@ public class Log : ILog
         var fb = _FB(message, fallback);
         if (Level < level)
             return fb;
+        if (Level >= LogLevel.Debug)
+            System.Diagnostics.Debug.WriteLine(message);
         ILog.writerAdapter.WriteLine(new TextTable.Row
         {
             _data =
