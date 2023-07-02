@@ -46,6 +46,25 @@ public class TestUnits
     }
 
     [Test]
+    public void TestNormalization_1()
+    {
+        var input = 8000 * Units.Volts;
+        var output = input.Normalize();
+
+        Assert.That((double)output, Is.EqualTo(8000));
+        Assert.That(output.ToString(), Is.EqualTo("8kV"));
+    }
+
+    [Test]
+    public void TestNormalization_2()
+    {
+        var input = 30 * Units.Hours;
+        var output = input.Normalize();
+
+        Assert.That(output.ToString(), Is.EqualTo("1d6h"));
+    }
+
+    [Test]
     public void TestFactorUnit_1()
     {
         var input = 2 * Units.Days;

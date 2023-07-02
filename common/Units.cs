@@ -26,19 +26,16 @@ public static class Units
         Weeks = new Unit(Time, "w") { Name = "Weeks" };
         Months = new Unit(Time, "mo") { Name = "Months" };
         Years = new Unit(Time, "y") { Name = "Years" };
-        RegisterFactorUnitChain(
+        RegisterFactorUnitChain(true,
             (Seconds, 1),
             (Minutes, 60),
             (Hours, 60),
             (Days, 24),
             (Weeks, 7));
-        RegisterFactorUnitChain(
-            (Seconds, 1),
-            (Minutes, 60),
-            (Hours, 60),
-            (Days, 24),
+        RegisterFactorUnitChain(false,
+            (Days, 1),
             (Years, 365));
-        RegisterFactorUnitChain(
+        RegisterFactorUnitChain(false,
             (Months, 1),
             (Years, 12));
 
@@ -55,7 +52,7 @@ public static class Units
         LightSecond = new Unit(Distance, "Ls") { Name = "LightSecond" };
         LightYear = new Unit(Distance, "Ly") { Name = "LightYear" };
         Parsec = new Unit(Distance, "pc") { Name = "Parsec" };
-        RegisterFactorUnitChain(
+        RegisterFactorUnitChain(true,
             (Meter, 1),
             (LightSecond, 299_792_458),
             (AstronomicalUnit, 499.001_996_008),
@@ -72,7 +69,7 @@ public static class Units
         Henry = new Unit(Electrical, "He") { Name = "Henry", Strategies = { ResultOf(Ohm, UnitOperator.Multiply, Seconds) } };
 
         // complex conversion chains
-        RegisterFactorUnitChain(
+        RegisterFactorUnitChain(false,
             (Watts * Seconds, 1),
             (Joules, 1));
     }
@@ -127,9 +124,9 @@ public static class Units
     public static UnitValue Parse(string str) => UnitCategory.Base.ParseValue(str);
     public static Unit ParseUnit(string str) => UnitCategory.Base.ParseUnit(str);
 
-    public static void RegisterFactorUnitChain(params (Unit unit, double factorFromPrevious)[] chain)
+    public static void RegisterFactorUnitChain(bool compoundString = false, params (Unit unit, double factorFromPrevious)[] chain)
     {
-        var strategy = new FactorUnitChain(chain.ToImmutableList());
+        var strategy = new FactorUnitChain(compoundString, chain.ToImmutableList());
         foreach (var (unit, _) in strategy.chain)
             unit.Strategies.Add(strategy);
     }
@@ -257,16 +254,39 @@ public abstract class UnitAccumulatorStrategy
 public class FactorUnitChain : UnitAccumulatorStrategy
 {
     private readonly Accumulator accumulator;
+    internal readonly bool compoundString;
     internal readonly IList<(Unit unit, double factorFromPrevious)> chain;
 
-    public FactorUnitChain(IList<(Unit unit, double factorFromPrevious)> chain)
+    public FactorUnitChain(bool compoundString, IList<(Unit unit, double factorFromPrevious)> chain)
     {
+        this.compoundString = compoundString;
         this.chain = chain;
-        accumulator = new Accumulator(this);
+        this.accumulator = new Accumulator(this);
     }
 
     public override bool IsUnitRelated(Unit arg) => chain.Any(x => x.unit == arg);
     public override IEnumerable<UnitAccumulator> CreateAccumulators(Unit unit) => new[] { accumulator };
+
+    public string ToCompoundString(UnitValue it)
+    {
+        var str = string.Empty;
+        
+        for (var i = chain.Count - 1; i > -1; i--)
+        {
+            var link = chain[i];
+            var val = it | link.unit;
+            using var iter = chain.Reverse().GetEnumerator();
+
+            if (val >= 1)
+            {
+                var here = (int)val * link.unit;
+                str += $"{here}{link.unit.Identifier}";
+                it -= here;
+            }
+        }
+
+        return str;
+    }
 
     private class Accumulator : UnitAccumulator
     {
@@ -416,7 +436,7 @@ public class Unit
     }
 
     public int Base { get; init; } = 10;
-    public List<UnitAccumulatorStrategy> Strategies { get; init; } = new();
+    public virtual List<UnitAccumulatorStrategy> Strategies { get; init; } = new();
 
     public static UnitValue operator *(Unit left, double right) => new(left, right);
     public static UnitValue operator *(double right, Unit left) => new(left, right);
@@ -474,14 +494,19 @@ internal class CombinationUnit : Unit
 
 public class UnitInstance : Unit
 {
-    private readonly Unit _unit;
+    protected readonly Unit _unit;
     public UnitInstance(Unit unit, SiPrefix siPrefix) : base(unit.Category, unit.Identifier)
     {
         _unit = unit;
         Base = unit.Base;
         SiPrefix = siPrefix;
     }
-
+    
+    public override List<UnitAccumulatorStrategy> Strategies
+    {
+        get => _unit.Strategies;
+        init => Strategies.AddRange(value);
+    }
     public override SiPrefix SiPrefix { get; }
     public override string Name
     {
@@ -498,14 +523,20 @@ public class UnitValue : UnitInstance
         Value = value;
     }
 
+    public override List<UnitAccumulatorStrategy> Strategies
+    {
+        get => _unit.Strategies;
+        init => Strategies.AddRange(value);
+    }
+    public bool Normalized { get; init; } = false;
     public double Value { get; }
 
     public static UnitValue operator +(double right, UnitValue left) => left + right;
     public static UnitValue operator +(UnitValue left, double right) => left + (left as Unit) * right;
-    public static UnitValue operator +(UnitValue left, UnitValue right) => (left as Unit) * (left.Value + right.Value);
+    public static UnitValue operator +(UnitValue left, UnitValue right) => (left as Unit) * (left.Value + right.Value); // TODO does not work right when subtracting different fuc stages
     public static UnitValue operator -(double right, UnitValue left) => left - right;
     public static UnitValue operator -(UnitValue left, double right) => left - (left as Unit) * right;
-    public static UnitValue operator -(UnitValue left, UnitValue right) => (left as Unit) * (left.Value - right.Value);
+    public static UnitValue operator -(UnitValue left, UnitValue right) => (left as Unit) * (left.Value - right.Value); // TODO does not work right when subtracting different fuc stages
     public static UnitValue operator *(double right, UnitValue l) => l * right;
     public static UnitValue operator *(UnitValue l, double right) => l * (Units.EmptyUnit * right);
     public static UnitValue operator *(UnitValue l, UnitValue r)
@@ -540,17 +571,19 @@ public class UnitValue : UnitInstance
             var next = i + 1 < prefixes.Length ? prefixes[i + 1] : (SiPrefix?)null;
 
             if (next != null && value >= Math.Pow(Base, (int)si) && value < Math.Pow(Base, (int)next))
-                return new UnitValue(new UnitInstance(this, si), SiPrefix.ConvertTo(si, value, Base));
+                return new UnitValue(new UnitInstance(this, si), SiPrefix.ConvertTo(si, value, Base)) { Normalized = true };
         }
 
-        return new UnitValue(new UnitInstance(this, SiPrefix.One), value);
+        return new UnitValue(new UnitInstance(this, SiPrefix.One), value) { Normalized = true };
     }
 
     public override bool Equals(object? obj) => obj is Unit u && u == this;
     public override int GetHashCode() => ToString().GetHashCode();
 
     public override string ToString()
-        => $"{Value:0.###}{(SiPrefix == SiPrefix.One ? string.Empty : SiPrefix.ToString())}{Identifier}";
+        => Normalized && Strategies.FirstOrDefault(strat => strat is FactorUnitChain { compoundString: true }) is FactorUnitChain fuc
+            ? fuc.ToCompoundString(this)
+            : $"{Value:0.###}{(SiPrefix == SiPrefix.One ? string.Empty : SiPrefix.ToString())}{Identifier}";
 }
 
 public enum SiPrefix : short
