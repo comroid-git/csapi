@@ -280,7 +280,7 @@ public class FactorUnitChain : UnitAccumulatorStrategy
             if (val >= 1)
             {
                 var here = (int)val * link.unit;
-                str += $"{here}{link.unit.Identifier}";
+                str += here.ToString();
                 it -= here;
             }
         }
@@ -533,10 +533,10 @@ public class UnitValue : UnitInstance
 
     public static UnitValue operator +(double right, UnitValue left) => left + right;
     public static UnitValue operator +(UnitValue left, double right) => left + (left as Unit) * right;
-    public static UnitValue operator +(UnitValue left, UnitValue right) => (left as Unit) * (left.Value + right.Value); // TODO does not work right when subtracting different fuc stages
+    public static UnitValue operator +(UnitValue left, UnitValue right) => (left as Unit) * (left.Value + right.Value); // TODO does not work right when subtracting different si prefixes
     public static UnitValue operator -(double right, UnitValue left) => left - right;
     public static UnitValue operator -(UnitValue left, double right) => left - (left as Unit) * right;
-    public static UnitValue operator -(UnitValue left, UnitValue right) => (left as Unit) * (left.Value - right.Value); // TODO does not work right when subtracting different fuc stages
+    public static UnitValue operator -(UnitValue left, UnitValue right) => (left as Unit) * (left.Value - right.Value); // TODO does not work right when subtracting different si prefixes
     public static UnitValue operator *(double right, UnitValue l) => l * right;
     public static UnitValue operator *(UnitValue l, double right) => l * (Units.EmptyUnit * right);
     public static UnitValue operator *(UnitValue l, UnitValue r)
