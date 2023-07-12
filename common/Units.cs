@@ -270,18 +270,28 @@ public class FactorUnitChain : UnitAccumulatorStrategy
     public string ToCompoundString(UnitValue it)
     {
         var str = string.Empty;
+        var i = chain.Count - 1;
         
-        for (var i = chain.Count - 1; i > -1; i--)
+        while ((it | chain[i].unit) < 1)
+            i--;
+        if (i < 0) i = 0;
+
+        for (; i > -1; i--)
         {
             var link = chain[i];
             var val = it | link.unit;
-            using var iter = chain.Reverse().GetEnumerator();
 
             if (val >= 1)
             {
-                var here = (int)val * link.unit;
+                var here = (double)val * link.unit;
                 str += here.ToString();
                 it -= here;
+            }
+            else if (i >= chain.Count)
+            {
+                var here = (int)val * link.unit;
+                str += here.ToString();
+                break;
             }
         }
 
@@ -533,10 +543,10 @@ public class UnitValue : UnitInstance
 
     public static UnitValue operator +(double right, UnitValue left) => left + right;
     public static UnitValue operator +(UnitValue left, double right) => left + (left as Unit) * right;
-    public static UnitValue operator +(UnitValue left, UnitValue right) => (left as Unit) * (left.Value + right.Value); // TODO does not work right when subtracting different si prefixes
+    public static UnitValue operator +(UnitValue left, UnitValue right) => (left as Unit) * ((double) left + (double) right);
     public static UnitValue operator -(double right, UnitValue left) => left - right;
     public static UnitValue operator -(UnitValue left, double right) => left - (left as Unit) * right;
-    public static UnitValue operator -(UnitValue left, UnitValue right) => (left as Unit) * (left.Value - right.Value); // TODO does not work right when subtracting different si prefixes
+    public static UnitValue operator -(UnitValue left, UnitValue right) => (left as Unit) * ((double) left - (double) right);
     public static UnitValue operator *(double right, UnitValue l) => l * right;
     public static UnitValue operator *(UnitValue l, double right) => l * (Units.EmptyUnit * right);
     public static UnitValue operator *(UnitValue l, UnitValue r)
