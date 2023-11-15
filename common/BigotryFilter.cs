@@ -31,7 +31,7 @@ public sealed class BigotryFilter
         }
         catch (Exception e)
         {
-            Log<BigotryFilter>.Error("Could not obtain pronouns", e);
+            throw new Exception("Could not obtain pronouns", e);
         }
     }
 
