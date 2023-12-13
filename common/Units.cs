@@ -498,7 +498,9 @@ internal class CombinationUnit : Unit
         strip |= SiPrefix.One;
         if (!@base.Identifier.Contains(strip.Identifier))
             return null;
-        return Units.ParseUnit(@base.Identifier.Replace(strip.Identifier, string.Empty)) * value;
+        return Units.ParseUnit(strip.Identifier.Length == 0
+            ? @base.Identifier
+            : @base.Identifier.Replace(strip.Identifier, string.Empty)) * value;
     }
 }
 
