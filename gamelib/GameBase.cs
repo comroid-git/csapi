@@ -22,12 +22,12 @@ public abstract class GameBase : GameObject
 #endif
     private float frameTime, tickTime;
 
-    protected GameBase(RenderWindow window = null!) : base(null!, Singularity.Default())
+    protected GameBase(RenderWindow? window = null!) : base(null!, Singularity.Default())
     {
-        this.log = new Log(GetType());
-        this.Window = window ?? new RenderWindow(VideoMode.DesktopMode, GetType().Name);
-        this.Camera = MainCamera = new WindowCamera(Window);
-        this.UpdateThread = new Thread(RunUpdate);
+        log = new Log(GetType());
+        Window = window ?? new RenderWindow(VideoMode.DesktopMode, GetType().Name);
+        Camera = MainCamera = new WindowCamera(Window);
+        UpdateThread = new Thread(RunUpdate);
 
         Window.Closed += (_, _) => Window.Close();
         Window.Resized += (_, e) => SetView(Camera.Position, new Vector2f(e.Width, e.Height));

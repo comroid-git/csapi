@@ -98,6 +98,13 @@ public interface IRenderObject : IGameObjectComponent
 {
 }
 
+public interface IPhysicsObject : IGameObjectComponent
+{
+    float NearbyDistance { get; }
+
+    bool PhysicsUpdate(IEnumerable<IPhysicsObject> nearby);
+}
+
 public interface ICollider : IGameObjectComponent
 {
     bool Inverse { get; set; }

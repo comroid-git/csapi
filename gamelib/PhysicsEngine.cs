@@ -3,6 +3,7 @@ using comroid.gamelib.Capability;
 
 namespace comroid.gamelib;
 
+[Obsolete("Use PhysicsBehaviour instead")]
 public class PhysicsEngine : GameObject
 {
     public Vector3 Gravity { get; set; }
@@ -26,5 +27,26 @@ public class PhysicsEngine : GameObject
         }
 
         return base.EarlyUpdate();
+    }
+}
+
+public abstract class PhysicsBehaviour : GameObjectComponent, IPhysicsObject
+{
+    public float NearbyDistance => Transform.Scale.Length();
+
+    protected PhysicsBehaviour(IGameObject gameObject, ITransform? transform = null) : base(gameObject, transform)
+    {
+    }
+
+    public bool PhysicsUpdate(IEnumerable<IPhysicsObject>? nearby = null)
+    {
+
+    }
+}
+
+public class FluidBlob : PhysicsBehaviour
+{
+    public FluidBlob(IGameObject gameObject, ITransform? transform = null) : base(gameObject, transform)
+    {
     }
 }
