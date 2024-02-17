@@ -14,14 +14,10 @@ public abstract class UiPanel
 
     public abstract IEnumerable<string> Print(int width, int height);
 
-    public Timer Run(long refreshInterval, Action? callback = null)
+    public Timer Run(int refreshInterval)
     {
         var task = new Timer(refreshInterval) { AutoReset = true };
-        task.Elapsed += (_, _) =>
-        {
-            callback?.Invoke();
-            Redraw();
-        };
+        task.Elapsed += (_,_) => Redraw();
         task.Start();
         return task;
     }
