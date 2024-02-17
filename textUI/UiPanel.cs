@@ -1,8 +1,6 @@
-﻿using System.Collections;
-using System.Drawing;
+﻿using System.Drawing;
 using comroid.common;
 using comroid.textUI.model;
-using Console = System.Console;
 using Timer = System.Timers.Timer;
 
 namespace comroid.textUI;
@@ -19,7 +17,11 @@ public abstract class UiPanel
     public Timer Run(long refreshInterval, Action? callback = null)
     {
         var task = new Timer(refreshInterval) { AutoReset = true };
-        task.Elapsed += (_, _) => Redraw();
+        task.Elapsed += (_, _) =>
+        {
+            callback?.Invoke();
+            Redraw();
+        };
         task.Start();
         return task;
     }
@@ -53,7 +55,7 @@ public abstract class UiPanel
 
 public class TextPanel : UiPanel
 {
-    public virtual string Text { get; init; } = string.Empty;
+    public List<String> Lines { get; set; } = new();
 
     public override IEnumerable<string> Print(int width, int height)
     {
@@ -63,7 +65,7 @@ public class TextPanel : UiPanel
             goto end;
         }
 
-        var nNewl = Text.Count(c=>c=='\n');
+        var nNewl = Lines.Count;
         var spacingH = height - (1 + nNewl);
         var halfSpacingH = spacingH / 2;
         var evenSpacingH = spacingH % 2 == 0;
@@ -74,7 +76,7 @@ public class TextPanel : UiPanel
             yield return "";
 
         // text content
-        foreach (var str in Text.Split("\n"))
+        foreach (var str in Lines)
         {
             var spacingW = width - str.Length;
             var halfSpacingW = spacingW / 2;
@@ -83,7 +85,7 @@ public class TextPanel : UiPanel
             var spacer = string.Empty;
             for (var w = 0; w < limSpacingW; w++)
                 spacer += ' ';
-            yield return spacer + Text + ' ' + spacer;
+            yield return spacer + str + ' ' + spacer;
         }
 
         // bottom padding
