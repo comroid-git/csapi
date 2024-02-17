@@ -61,6 +61,16 @@ public class TextPanel : UiPanel
             goto end;
         }
 
+        var emptyLine = string.Empty;
+        for (var col = 0; col < width; col++)
+            emptyLine += ' ';
+        if (Lines.Count == 0 || Lines.All(string.IsNullOrWhiteSpace))
+        {
+            for (var row = 0; row < height; row++)
+                yield return emptyLine;
+            goto end;
+        }
+
         var nNewl = Lines.Count;
         var spacingH = height - (1 + nNewl);
         var halfSpacingH = spacingH / 2;
@@ -69,7 +79,7 @@ public class TextPanel : UiPanel
 
         // top padding
         for (var h = 0; h < limSpacingH; h++)
-            yield return "";
+            yield return emptyLine;
 
         // text content
         foreach (var str in Lines)
@@ -87,7 +97,7 @@ public class TextPanel : UiPanel
         // bottom padding
         limSpacingH -= evenSpacingH ? 1 : 0;
         for (var h = 0; h < limSpacingH; h++)
-            yield return "";
+            yield return emptyLine;
 
         end: ;
     }
